@@ -2429,7 +2429,7 @@ function saveKo(){try{localStorage.setItem("wc2026:ko",JSON.stringify(koWin));}c
 
 /* ===== HELPERS ===== */
 const TWZ={timeZone:"Asia/Taipei"};
-function twParts(iso){const d=new Date(iso);const p={};new Intl.DateTimeFormat("zh-TW",{...TWZ,month:"numeric",day:"numeric",weekday:"short",hour:"numeric",minute:"2-digit",hour12:true}).formatToParts(d).forEach(x=>p[x.type]=x.value);return p;}
+function twParts(iso){const d=new Date(iso);const p={};new Intl.DateTimeFormat("zh-TW",{...TWZ,month:"numeric",day:"numeric",weekday:"short",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(d).forEach(x=>p[x.type]=x.value);return p;}
 function twDateKey(iso){return new Intl.DateTimeFormat("en-CA",{...TWZ,year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(iso));}
 function tname(c){return T[c]?(T[c].fl+" "+T[c].zh):null;}
 function tlabel(c){return T[c]?`<span class="team">${flagImg(c)}${T[c].zh}</span>`:`<span class="team tbd">${c}</span>`;}
@@ -2531,7 +2531,7 @@ function cardHTML(m){const p=twParts(m.kick),st=statusOf(m),sc=scores[m.id],w=wa
  if(sc)mid=`${tlabel(m.h)}<span class="score" data-edit="${m.id}">${sc.h} : ${sc.a}</span>${tlabel(m.a)}`;
  else{const tag=st==="live"?`<span class="live-dot">LIVE</span>`:st==="await"?`<span class="score" data-edit="${m.id}">輸入比分</span>`:`<span class="vs">VS</span>`;mid=`${tlabel(m.h)}${tag}${tlabel(m.a)}`;}
  const stageTag=m.stage==="grp"?`${m.group} 組`:(m.no?`賽事 ${m.no}`:m.group);
- return `<div class="card ${w?'watched':''} ${st==='live'?'live':''}" data-id="${m.id}"><div class="when"><div class="t">${p.hour}:${p.minute}</div><div class="ampm">${p.dayPeriod}</div><div class="dm">${p.month}/${p.day} ${p.weekday}</div></div>
+ return `<div class="card ${w?'watched':''} ${st==='live'?'live':''}" data-id="${m.id}"><div class="when"><div class="t">${p.hour}:${p.minute}</div><div class="dm">${p.month}/${p.day} ${p.weekday}</div></div>
   <div class="center"><div class="matchup">${mid}</div><div class="meta"><span class="pill">${stageTag}</span>${m.venue?`<span>📍 ${m.venue}</span>`:""}</div></div>
   <div class="actions"><button class="star ${w?'on':''}" data-star="${m.id}">★</button>${(T[m.h]&&T[m.a])?`<button class="cal" data-lu="${m.id}">📋 名單</button>`:""}<button class="cal" data-cal="${m.id}">📅 加入日曆</button></div></div>`;}
 function render(){
