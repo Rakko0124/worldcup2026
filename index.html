@@ -2571,8 +2571,9 @@ function tickCount(){const now=Date.now(),diff=KICKOFF.getTime()-now;const el=do
  else if(now<new Date("2026-07-19T21:00:00Z")){el.textContent="LIVE";el.style.color="var(--red)";lbl.textContent="賽事進行中";}else{el.textContent="🏆";lbl.textContent="賽事已結束";}}
 
 /* ===== CALENDAR ===== */
+function gcalLocal(iso){const d=new Date(iso);const p={};new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"}).formatToParts(d).forEach(x=>p[x.type]=x.value);return `${p.year}${p.month}${p.day}T${p.hour}${p.minute}${p.second}`;}
 function gcalUrl(m){const details=`世界盃 2026 ${m.stage==='grp'?m.group+'組':m.group}\n地點：${m.venue||'TBD'}\n台灣轉播：愛爾達體育台 (MOD) / 華視`;
- const params=new URLSearchParams({action:"TEMPLATE",text:matchTitle(m),dates:`${icsStamp(m.kick)}/${icsStamp(endIso(m.kick))}`,details,location:m.venue||"",ctz:"Asia/Taipei"});
+ const params=new URLSearchParams({action:"TEMPLATE",text:matchTitle(m),dates:`${gcalLocal(m.kick)}/${gcalLocal(endIso(m.kick))}`,details,location:m.venue||"",ctz:"Asia/Taipei"});
  return "https://calendar.google.com/calendar/render?"+params.toString();}
 function exportICS(){const ids=[...watch];if(!ids.length){setStatus("還沒有關注的比賽，先點 ★ 加幾場吧。");return;}
  const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//WorldCup2026//TW//EN","CALSCALE:GREGORIAN","X-WR-CALNAME:2026 世界盃關注賽程"];
