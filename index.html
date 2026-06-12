@@ -97,6 +97,10 @@
   .phase{font-family:"Oswald";font-size:11px;font-weight:600;color:var(--gold);border:1px solid var(--line2);border-radius:6px;padding:1px 6px;margin-left:4px;white-space:nowrap}
   .goal .gt{color:var(--muted);font-size:11.5px;white-space:nowrap}
   .pill.live-pill{color:var(--red);border-color:var(--red);font-weight:700}
+  .pill.st-up{color:var(--faint)}
+  .pill.st-live{color:var(--red);border-color:var(--red);font-weight:700}
+  .pill.st-done{color:var(--blue);border-color:var(--line2)}
+  a.cal.elta{text-decoration:none;color:var(--blue);border-color:var(--line2)} a.cal.elta:hover{border-color:var(--blue)}
   /* lottery */
   .lot-banner{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin:16px 0}
   .lot-title{font-family:"Anton";font-size:22px;color:var(--lime)}
@@ -2550,8 +2554,8 @@ function cardHTML(m){const p=twParts(m.kick),st=statusOf(m),sc=scores[m.id],w=wa
  const gl=goalsById[m.id];
  const goalsBlock=(gl&&gl.length)?`<div class="goals">${gl.map(g=>`<span class="goal"><span class="gm">${g.min||""}</span>${g.code&&T[g.code]?flagImg(g.code):""}<span class="gn">${g.who||"進球"}${nameZh[g.who]?`<span class="gz">${nameZh[g.who]}</span>`:""}${g.tag?`（${g.tag}）`:""}</span></span>`).join("")}</div>`:"";
  return `<div class="card ${w?'watched':''} ${st==='live'?'live':''}" data-id="${m.id}"><div class="when"><div class="t">${p.hour}:${p.minute}</div><div class="dm">${p.month}/${p.day} ${p.weekday}</div></div>
-  <div class="center"><div class="matchup">${mid}</div><div class="meta">${st==="live"?`<span class="pill live-pill">● LIVE</span>`:""}<span class="pill">${stageTag}</span>${m.venue?`<span>📍 ${m.venue}</span>`:""}</div>${goalsBlock}</div>
-  <div class="actions"><button class="star ${w?'on':''}" data-star="${m.id}">★</button>${(T[m.h]&&T[m.a])?`<button class="cal" data-lu="${m.id}">📋 名單</button>`:""}<button class="cal" data-cal="${m.id}">📅 加入日曆</button></div></div>`;}
+  <div class="center"><div class="matchup">${mid}</div><div class="meta">${st==="upcoming"?`<span class="pill st-up">未開始</span>`:st==="live"?`<span class="pill st-live">● 進行中</span>`:`<span class="pill st-done">已結束</span>`}<span class="pill">${stageTag}</span>${m.venue?`<span>📍 ${m.venue}</span>`:""}</div>${goalsBlock}</div>
+  <div class="actions"><button class="star ${w?'on':''}" data-star="${m.id}">★</button>${(T[m.h]&&T[m.a])?`<button class="cal" data-lu="${m.id}">📋 名單</button>`:""}<a class="cal elta" href="https://eltaott.tv/fifa2026" target="_blank" rel="noopener">📺 愛爾達</a><button class="cal" data-cal="${m.id}">📅 加入日曆</button></div></div>`;}
 function render(){
  const arr=visible();
  if(!arr.length){listEl.innerHTML=`<div class="empty">${viewMode==='watch'?'還沒有關注任何比賽。<br>點比賽右上角的 ★ 加入關注。':'沒有符合的比賽。'}</div>`;return;}
@@ -2590,7 +2594,7 @@ function tickCount(){const now=Date.now(),diff=KICKOFF.getTime()-now;const el=do
 
 /* ===== CALENDAR ===== */
 function gcalLocal(iso){const d=new Date(iso);const p={};new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"}).formatToParts(d).forEach(x=>p[x.type]=x.value);return `${p.year}${p.month}${p.day}T${p.hour}${p.minute}${p.second}`;}
-function gcalUrl(m){const details=`世界盃 2026 ${m.stage==='grp'?m.group+'組':m.group}\n地點：${m.venue||'TBD'}\n台灣轉播：愛爾達體育台 (MOD) / 華視`;
+function gcalUrl(m){const details=`世界盃 2026 ${m.stage==='grp'?m.group+'組':m.group}\n地點：${m.venue||'TBD'}\n台灣轉播：愛爾達 ELTA TV（MOD／Hami Video，部分場次台視・東森）`;
  const params=new URLSearchParams({action:"TEMPLATE",text:matchTitle(m),dates:`${gcalLocal(m.kick)}/${gcalLocal(endIso(m.kick))}`,details,location:m.venue||"",ctz:"Asia/Taipei"});
  return "https://calendar.google.com/calendar/render?"+params.toString();}
 function exportICS(){const ids=[...watch];if(!ids.length){setStatus("還沒有關注的比賽，先點 ★ 加幾場吧。");return;}
