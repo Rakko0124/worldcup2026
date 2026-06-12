@@ -2725,21 +2725,29 @@ function posZh(p){const pos=p.position||{};const ab=(pos.abbreviation||"").toUpp
  if(/goal/.test(nm))return "門將";if(/back|defen/.test(nm))return "後衛";if(/midfield/.test(nm))return "中場";if(/forward|striker|wing/.test(nm))return "前鋒";
  return pos.abbreviation||pos.name||"";}
 function luRow(p){const a=p.athlete||{};const num=p.jersey?p.jersey:"";const nm=a.displayName||a.shortName||a.fullName||"";const zh=nameZh[nm];return `<div class="lu-row"><span class="lu-num">${num}</span><span class="lu-nm">${nm}${zh?`<span class="lu-zh">${zh}</span>`:""}</span><span class="lu-pos">${posZh(p)}</span></div>`;}
-function pitchHTML(rs,side){const players=(rs.roster||[]).filter(p=>p.starter);if(players.length<11)return "";
- players.sort((a,b)=>(parseInt(a.formationPlace)||99)-(parseInt(b.formationPlace)||99));
- const fname=(rs.formation&&rs.formation.name)||"";const digits=fname.split("-").map(n=>parseInt(n)).filter(n=>n>0);
- let rows=[[players[0]]];
- if(digits.length&&digits.reduce((s,n)=>s+n,0)===players.length-1){let i=1;for(const d of digits){rows.push(players.slice(i,i+d));i+=d;}}
- else{const rest=players.slice(1);const per=Math.ceil(rest.length/4);for(let i=0;i<rest.length;i+=per)rows.push(rest.slice(i,i+per));}
- const n=rows.length;let dots="";
+function lineOf(p){const nm=((p.position&&p.position.name)||"").toLowerCase();const ab=((p.position&&p.position.abbreviation)||"").toUpperCase();
+ if(/goalkeep/.test(nm)||ab==="G"||ab==="GK")return 0;
+ if(/defen|sweeper|back/.test(nm))return 1;
+ if(/midfield/.test(nm))return 2;
+ if(/forward|strik|wing|attack/.test(nm))return 3;
+ if(["CB","LB","RB","LWB","RWB","SW","D","LCB","RCB"].includes(ab))return 1;
+ if(["DM","CDM","CM","AM","CAM","LM","RM","M","WM"].includes(ab))return 2;
+ if(["ST","CF","SS","LW","RW","F","W"].includes(ab))return 3;
+ const c=ab.charAt(0);if(c==="G")return 0;if(c==="D")return 1;if(c==="F")return 3;return 2;}
+function formationLines(rs){const players=(rs.roster||[]).filter(p=>p.starter);if(players.length<11)return null;
+ const lines=[[],[],[],[]];players.forEach(p=>lines[lineOf(p)].push(p));
+ lines.forEach(l=>l.sort((a,b)=>(parseInt(a.formationPlace)||parseInt(a.jersey)||99)-(parseInt(b.formationPlace)||parseInt(b.jersey)||99)));
+ return lines.filter(l=>l.length);}
+function formationStr(rows){return rows?rows.filter((l,i)=>i>0).map(l=>l.length).join("-"):"";}
+function pitchHTML(rows,side){if(!rows||!rows.length)return "";const n=rows.length;let dots="";
  rows.forEach((row,ri)=>{const y=100-((ri+0.5)/n*100);row.forEach((p,ci)=>{const x=((ci+0.5)/row.length)*100;const a=p.athlete||{};const num=p.jersey||"";const nm=nameZh[a.displayName]||a.shortName||a.displayName||"";dots+=`<div class="pp pp-${side}" style="left:${x}%;top:${y}%"><span class="pp-n">${num}</span><span class="pp-l">${nm}</span></div>`;});});
  return `<div class="pitch">${dots}</div>`;}
 function lineupHTML(rosters,m){let html='<div class="lu-grid">';
  rosters.forEach(rs=>{const code=matchCode(rs.team)||(rs.homeAway==="home"?m.h:m.a);const side=rs.homeAway==="away"?"a":"h";
   const players=rs.roster||[];const starters=players.filter(p=>p.starter);const subs=players.filter(p=>!p.starter);
-  const form=rs.formation&&rs.formation.name?` · ${rs.formation.name}`:"";
+  const rows=formationLines(rs);const fstr=formationStr(rows);const form=fstr?` · ${fstr}`:"";
   html+=`<div class="lu-team"><div class="lu-h">${T[code]?flagName(code):((rs.team&&rs.team.displayName)||"")}<span style="color:var(--faint);font-size:11px;font-weight:400">${form}</span></div>`;
-  html+=pitchHTML(rs,side);
+  html+=pitchHTML(rows,side);
   html+='<div class="lu-sec">先發</div>'+(starters.length?starters:players).map(luRow).join("");
   if(starters.length&&subs.length)html+='<div class="lu-sec">替補</div>'+subs.map(luRow).join("");
   html+='</div>';});
