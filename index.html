@@ -88,6 +88,13 @@
   .lu-num{display:inline-block;min-width:22px;text-align:center;color:var(--lime);font-family:"Anton";font-size:13px}
   .lu-nm{flex:1} .lu-pos{color:var(--faint);font-size:11px}
   .lu-msg,.lu-load{color:var(--muted);font-size:12.5px;padding:4px 0}
+  .goals{display:flex;flex-direction:column;gap:3px;margin-top:8px;padding-top:7px;border-top:1px dashed var(--line)}
+  .goal{font-size:12.5px;display:flex;align-items:baseline;gap:7px}
+  .goal::before{content:"⚽";font-size:11px;line-height:1.2}
+  .goal .gm{font-family:"Oswald";font-weight:600;color:var(--lime);min-width:34px}
+  .goal .gn{flex:1;font-weight:700}
+  .goal .gt{color:var(--muted);font-size:11.5px;white-space:nowrap}
+  .pill.live-pill{color:var(--red);border-color:var(--red);font-weight:700}
   /* lottery */
   .lot-banner{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin:16px 0}
   .lot-title{font-family:"Anton";font-size:22px;color:var(--lime)}
@@ -2418,6 +2425,7 @@ const ROUNDS=[["32 強",[73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88]],["16 
 
 /* ===== STATE ===== */
 let watch=new Set(), scores={}, koWin={}, viewMode="date", teamFilter="", tab="sched", memOnly=false;
+let liveSet=new Set(); const goalsById={};
 function loadState(){
  try{const w=localStorage.getItem("wc2026:watch");if(w)watch=new Set(JSON.parse(w));}catch(e){}
  try{const s=localStorage.getItem("wc2026:scores");if(s)scores=JSON.parse(s);}catch(e){}
@@ -2436,7 +2444,7 @@ function tlabel(c){return T[c]?`<span class="team">${flagImg(c)}${T[c].zh}</span
 function pad(n){return String(n).padStart(2,"0");}
 function icsStamp(iso){const d=new Date(iso);return d.getUTCFullYear()+pad(d.getUTCMonth()+1)+pad(d.getUTCDate())+"T"+pad(d.getUTCHours())+pad(d.getUTCMinutes())+"00Z";}
 function endIso(iso){return new Date(new Date(iso).getTime()+2*3600*1000).toISOString();}
-function statusOf(m){const k=new Date(m.kick).getTime(),now=Date.now();if(scores[m.id])return"done";if(now>=k&&now<k+8100000)return"live";if(now>=k+8100000)return"await";return"upcoming";}
+function statusOf(m){const k=new Date(m.kick).getTime(),now=Date.now();if(liveSet.has(m.id))return"live";if(scores[m.id])return"done";if(now>=k&&now<k+8100000)return"live";if(now>=k+8100000)return"await";return"upcoming";}
 function matchTitle(m){const h=tname(m.h)||m.h,a=tname(m.a)||m.a;const tag=m.stage==="grp"?m.group+"組":m.group;return `⚽ ${h} vs ${a}（世界盃 ${tag}）`;}
 
 /* ===== STANDINGS ===== */
@@ -2531,8 +2539,10 @@ function cardHTML(m){const p=twParts(m.kick),st=statusOf(m),sc=scores[m.id],w=wa
  if(sc)mid=`${tlabel(m.h)}<span class="score" data-edit="${m.id}">${sc.h} : ${sc.a}</span>${tlabel(m.a)}`;
  else{const tag=st==="live"?`<span class="live-dot">LIVE</span>`:st==="await"?`<span class="score" data-edit="${m.id}">輸入比分</span>`:`<span class="vs">VS</span>`;mid=`${tlabel(m.h)}${tag}${tlabel(m.a)}`;}
  const stageTag=m.stage==="grp"?`${m.group} 組`:(m.no?`賽事 ${m.no}`:m.group);
+ const gl=goalsById[m.id];
+ const goalsBlock=(gl&&gl.length)?`<div class="goals">${gl.map(g=>`<span class="goal"><span class="gm">${g.min||""}</span><span class="gn">${g.who||"進球"}${g.tag?`（${g.tag}）`:""}</span>${g.code&&T[g.code]?`<span class="gt">${T[g.code].zh}</span>`:""}</span>`).join("")}</div>`:"";
  return `<div class="card ${w?'watched':''} ${st==='live'?'live':''}" data-id="${m.id}"><div class="when"><div class="t">${p.hour}:${p.minute}</div><div class="dm">${p.month}/${p.day} ${p.weekday}</div></div>
-  <div class="center"><div class="matchup">${mid}</div><div class="meta"><span class="pill">${stageTag}</span>${m.venue?`<span>📍 ${m.venue}</span>`:""}</div></div>
+  <div class="center"><div class="matchup">${mid}</div><div class="meta">${st==="live"?`<span class="pill live-pill">● LIVE</span>`:""}<span class="pill">${stageTag}</span>${m.venue?`<span>📍 ${m.venue}</span>`:""}</div>${goalsBlock}</div>
   <div class="actions"><button class="star ${w?'on':''}" data-star="${m.id}">★</button>${(T[m.h]&&T[m.a])?`<button class="cal" data-lu="${m.id}">📋 名單</button>`:""}<button class="cal" data-cal="${m.id}">📅 加入日曆</button></div></div>`;}
 function render(){
  const arr=visible();
@@ -2594,18 +2604,25 @@ async function fetchLive(manual){
   const r=await fetch(url,{cache:"no-store"});
   if(!r.ok)throw new Error("HTTP "+r.status);
   const j=await r.json();const events=j.events||[];
-  let nG=0;const koPair={};
+  let nG=0;const koPair={};const newLive=new Set();
   events.forEach(ev=>{const comp=ev.competitions&&ev.competitions[0];if(!comp)return;
    const cs=comp.competitors||[];if(cs.length<2)return;
    const H=cs.find(c=>c.homeAway==="home")||cs[0],A=cs.find(c=>c.homeAway==="away")||cs[1];
    const ch=matchCode(H.team),ca=matchCode(A.team);if(!ch||!ca)return;
    if(ev.id){const k=pairKey(ch,ca);ESPN_EVENTS[k]=ESPN_EVENTS[k]||[];if(!ESPN_EVENTS[k].some(e=>e.id===ev.id))ESPN_EVENTS[k].push({id:ev.id,ts:Date.parse(ev.date||0)});}
-   const st=comp.status&&comp.status.type;const done=st&&(st.completed===true||st.state==="post");if(!done)return;
+   const st=comp.status&&comp.status.type;const state=st&&st.state;const done=st&&(st.completed===true||state==="post");const live=state==="in";
    const sh=parseInt(H.score),sa=parseInt(A.score);
    const gm=M.find(m=>m.stage==="grp"&&((m.h===ch&&m.a===ca)||(m.h===ca&&m.a===ch)));
-   if(gm){if(Number.isInteger(sh)&&Number.isInteger(sa)){scores[gm.id]={h:gm.h===ch?sh:sa,a:gm.h===ch?sa:sh};nG++;}}
-   else{const w=H.winner?ch:(A.winner?ca:null);if(w)koPair[pairKey(ch,ca)]=w;}
+   if(gm){
+     if(live)newLive.add(gm.id);
+     if((done||live)&&Number.isInteger(sh)&&Number.isInteger(sa)){scores[gm.id]={h:gm.h===ch?sh:sa,a:gm.h===ch?sa:sh};nG++;}
+     if(done||live){const idc={};if(H.team)idc[H.team.id]=ch;if(A.team)idc[A.team.id]=ca;
+       const gs=(comp.details||[]).filter(d=>d.scoringPlay).map(d=>({code:idc[d.team&&d.team.id]||null,min:(d.clock&&d.clock.displayValue)||"",who:(d.athletesInvolved&&d.athletesInvolved[0]&&(d.athletesInvolved[0].displayName||d.athletesInvolved[0].shortName))||"",tag:d.ownGoal?"烏龍":(d.penaltyKick?"PK":"")}));
+       if(gs.length)goalsById[gm.id]=gs;}
+   }
+   else if(done){const w=H.winner?ch:(A.winner?ca:null);if(w)koPair[pairKey(ch,ca)]=w;}
   });
+  liveSet=newLive;
   let changed=true,guard=0,adv=0;
   while(changed&&guard++<12){changed=false;for(const no of KO_ORDER){if(koWin[no]!=null)continue;const[pa,pb]=partsOf(no);if(pa.code&&pb.code){const w=koPair[pairKey(pa.code,pb.code)];if(w){koWin[no]=(w===pa.code)?0:1;changed=true;adv++;}}}}
   saveScores();saveKo();renderAll();lastFetch=Date.now();
@@ -2679,5 +2696,5 @@ document.getElementById("foot").innerHTML=`資料來源：FIFA 官方賽程與�
 /* ===== INIT ===== */
 loadState();renderAll();tickCount();setInterval(tickCount,60000);setInterval(()=>{if(tab==='sched')render();},120000);
 document.querySelectorAll(".refreshLive").forEach(b=>b.addEventListener("click",()=>fetchLive(true)));
-fetchLive(false);setInterval(()=>fetchLive(false),300000);
+fetchLive(false).then(function loop(){const d=M.some(m=>statusOf(m)==="live")?60000:300000;setTimeout(()=>fetchLive(false).then(loop),d);});
 </script>
