@@ -1,7 +1,7 @@
 <!-- 2026 FIFA World Cup tracker — Traditional Chinese (Taiwan). Schedule + Standings + Knockout bracket -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0a0d0b">
+<meta name="theme-color" content="#0a1429">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="世界盃">
@@ -18,6 +18,24 @@
     --lime:#cffd4a; --lime-dim:#9fc62f; --red:#ff4d3d; --gold:#f7c948; --blue:#5ec8ff;
     --radius:14px;
   }
+  [data-theme="bih"]{
+    --bg:#0a1429; --bg2:#0e1c3a; --surface:#122247; --surface2:#193463;
+    --line:#27406e; --line2:#37568f;
+    --txt:#f3f6fc; --muted:#a3b3d4; --faint:#62739c;
+    --lime:#ffd02e; --lime-dim:#d9a800; --red:#ff5a4d; --gold:#ffd84d; --blue:#5ea8ff;
+  }
+  [data-theme="spain"]{
+    --bg:#1d0608; --bg2:#280a0d; --surface:#351015; --surface2:#48171c;
+    --line:#5e242a; --line2:#80333a;
+    --txt:#fbf0ef; --muted:#d6a9a6; --faint:#9d6b68;
+    --lime:#ffc400; --lime-dim:#d9a300; --red:#ff5a4d; --gold:#ffd24a; --blue:#5aa0ff;
+  }
+  [data-theme="colombia"]{
+    --bg:#0c1430; --bg2:#111a3e; --surface:#16224f; --surface2:#1d2e66;
+    --line:#283c74; --line2:#3a5192;
+    --txt:#f6f7fc; --muted:#aeb6d0; --faint:#6c7699;
+    --lime:#ffd400; --lime-dim:#d9b400; --red:#e23b4a; --gold:#ffdc4a; --blue:#3a6fd8;
+  }
   *{box-sizing:border-box}
   html,body{margin:0}
   body{background:var(--bg);color:var(--txt);font-family:"Noto Sans TC","Oswald",system-ui,sans-serif;
@@ -31,6 +49,20 @@
     text-transform:uppercase;background:linear-gradient(180deg,#fff,#b9c7a6);-webkit-background-clip:text;background-clip:text;color:transparent}
   .crest b{color:var(--lime);-webkit-text-fill-color:var(--lime)}
   .sub{color:var(--muted);font-size:13.5px;margin-top:6px;font-family:"Oswald";letter-spacing:1px;text-transform:uppercase}
+  .bih-stars{display:none;margin:10px 0 0;color:#fff;font-size:12px;letter-spacing:8px;opacity:.5;transform:skewX(-14deg);transform-origin:left}
+  [data-theme="bih"] .bih-stars{display:block}
+  .themebar{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+  .tpill{all:unset;cursor:pointer;font-family:"Noto Sans TC";font-weight:700;font-size:12px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 12px;transition:.15s;-webkit-tap-highlight-color:transparent}
+  .tpill:hover{border-color:var(--line2)}
+  .tpill.on{background:var(--lime);color:#0a0d0b;border-color:var(--lime)}
+  .clog-btn{position:fixed;top:max(10px,env(safe-area-inset-top));right:10px;z-index:60;font-family:"Noto Sans TC";font-weight:700;font-size:12px;color:var(--txt);background:var(--surface2);border:1px solid var(--line2);border-radius:999px;padding:7px 12px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.45);-webkit-tap-highlight-color:transparent}
+  .clog-panel{position:fixed;top:max(50px,calc(env(safe-area-inset-top) + 42px));right:10px;z-index:60;width:min(330px,86vw);max-height:70vh;overflow:auto;background:var(--bg2);border:1px solid var(--line2);border-radius:14px;padding:14px 16px;box-shadow:0 10px 34px rgba(0,0,0,.55)}
+  .clog-head{display:flex;justify-content:space-between;align-items:center;font-family:"Anton";font-size:18px;letter-spacing:.5px;color:var(--lime);margin:0 0 10px}
+  .clog-x{all:unset;cursor:pointer;color:var(--muted);font-size:15px;padding:2px 8px;border-radius:8px}
+  .clog-x:hover{background:var(--surface)}
+  .clog-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:11px}
+  .clog-list li{font-size:13px;line-height:1.55;color:var(--txt);border-left:2px solid var(--lime);padding-left:10px}
+  .clog-list li .d{display:block;font-size:11px;color:var(--faint);font-family:"Oswald";letter-spacing:1px;margin-bottom:2px}
   .count{margin-top:14px;display:inline-flex;align-items:baseline;gap:10px;background:var(--surface);
     border:1px solid var(--line);border-radius:999px;padding:7px 15px}
   .count .n{font-family:"Anton";font-size:24px;color:var(--lime);line-height:1}
@@ -95,7 +127,7 @@
   .pp{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;width:52px;pointer-events:none}
   .pp-n{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:"Oswald";font-weight:700;font-size:12px;box-shadow:0 1px 3px rgba(0,0,0,.55)}
   .pp-h .pp-n{background:var(--lime);color:#0a0d0b}
-  .pp-a .pp-n{background:var(--gold);color:#0a0d0b}
+  .pp-a .pp-n{background:var(--blue);color:#0a1429}
   .pp-l{font-size:9.5px;margin-top:2px;color:#fff;text-align:center;text-shadow:0 1px 2px #000;line-height:1.05;max-height:22px;overflow:hidden}
   .goals{display:flex;flex-direction:column;gap:3px;margin-top:8px;padding-top:7px;border-top:1px dashed var(--line)}
   .goal{font-size:12.5px;display:flex;align-items:baseline;gap:7px}
@@ -2204,10 +2236,22 @@
     <path fill="#d80000" fill-rule="evenodd" d="m516.9 413.9-42.4-27.7-42.1 28 15.6-45.6-42-28 52-.5 16.2-45.4 16.4 45.3h52l-41.8 28.5 16 45.4z"/>
   </g></symbol></svg>
 <div class="wrap">
+  <button class="clog-btn" id="clogBtn" aria-label="更新紀錄">🆕 更新</button>
+  <div class="clog-panel" id="clogPanel" hidden>
+    <div class="clog-head">更新紀錄<button class="clog-x" id="clogX" aria-label="關閉">✕</button></div>
+    <ul class="clog-list" id="clogList"></ul>
+  </div>
   <header>
     <h1 class="crest">2026 世界<b>盃</b></h1>
     <div class="sub">FIFA World Cup · 美 / 加 / 墨 · 6/11 – 7/19 · 時間皆為台灣時間</div>
+    <div class="bih-stars" aria-hidden="true">★★★★★★★★</div>
     <div class="count" id="count"><span class="n" id="countN">–</span><span class="lbl" id="countLbl">距離開幕</span></div>
+    <div class="themebar" id="themebar">
+      <button class="tpill" data-theme="default">🟢 預設</button>
+      <button class="tpill" data-theme="bih">🔵 波赫</button>
+      <button class="tpill" data-theme="spain">🔴 西班牙</button>
+      <button class="tpill" data-theme="colombia">🟡 哥倫比亞</button>
+    </div>
   </header>
 </div>
 
@@ -2789,6 +2833,41 @@ document.getElementById("foot").innerHTML=`資料來源：FIFA 官方賽程與�
  「加入 Google 日曆」開啟預填事件頁按儲存即可；「匯出 .ics」可一次匯入 Google 日曆 / Apple 行事曆。<br>
  「📋 名單」會在開賽前約 1 小時、名單公布後顯示該場先發與替補（來源 ESPN，僅線上主機可用）；國旗為內嵌向量圖，離線或任何裝置都能正確顯示。<br>
  最佳第三名的分配 FIFA 採對照表，這裡先以文字標示，可手動點選晉級。你的關注、比分與晉級結果儲存在「這個裝置的瀏覽器」，不會上傳；手機與電腦各自獨立。淘汰賽場館與時間以官方公告為準。`;
+
+/* ===== THEME SWITCHER ===== */
+function applyTheme(name){
+  if(name&&name!=="default")document.documentElement.setAttribute("data-theme",name);
+  else document.documentElement.removeAttribute("data-theme");
+  try{localStorage.setItem("wc2026:theme",name||"default");}catch(e){}
+  document.querySelectorAll("#themebar .tpill").forEach(b=>b.classList.toggle("on",b.dataset.theme===(name||"default")));
+  try{const tc=getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();const meta=document.querySelector('meta[name="theme-color"]');if(meta&&tc)meta.setAttribute("content",tc);}catch(e){}
+}
+(function initTheme(){
+  let saved="bih";try{saved=localStorage.getItem("wc2026:theme")||"bih";}catch(e){}
+  applyTheme(saved);
+  document.getElementById("themebar").addEventListener("click",e=>{const b=e.target.closest(".tpill");if(!b)return;applyTheme(b.dataset.theme);});
+})();
+
+/* ===== CHANGELOG ===== */
+var CHANGELOG=[
+ {d:"6/13",t:"加了主題切換!現在能在 預設綠 / 波赫 / 西班牙 / 哥倫比亞 之間切換,順手把西班牙跟哥倫比亞也偷塞進來(因為都想要)。"},
+ {d:"6/13",t:"純屬個人喜好——波赫的隊服太可愛,加了波赫藍金主題 🐻(順帶一提,球衣上那個「熊掌」其實是西班牙品牌 Kelme 的爪印 logo,不是在地牌子)。"},
+ {d:"6/13",t:"進行中的比賽現在會直接顯示踢到第幾分鐘(● 67'、● 中場),不用再自己猜。"},
+ {d:"6/13",t:"把全部 104 場對了一次官方賽程,抓到 5 個手殘的開賽時間錯誤並修正,真是不好意思 😅。"},
+ {d:"6/12",t:"名單大升級:加了陣容圖(會自己排成 5-3-2 那種隊形)、球員繁體中文名、中文位置。"},
+ {d:"6/12",t:"進球即時播報:分鐘 + 國旗 + 進球者名字,還會標 延長/十二碼/烏龍。"},
+ {d:"6/12",t:"每場補上愛爾達轉播連結,以及 未開始 / 進行中 / 已結束 狀態標記。"},
+ {d:"6/12",t:"賽程多了「已結束」分頁,踢完的會自動收進去,不用一直往下捲。"},
+ {d:"6/11",t:"全站改成 24 小時制(中午 12:00、半夜 00:00),不再有上午下午看錯的問題。"},
+ {d:"6/11",t:"修好「加入 Google 日曆」時間慢一小時的 bug。"}
+];
+(function initChangelog(){
+  var ul=document.getElementById("clogList");
+  if(ul)ul.innerHTML=CHANGELOG.map(function(c){return '<li><span class="d">'+c.d+'</span>'+c.t+'</li>';}).join("");
+  var btn=document.getElementById("clogBtn"),panel=document.getElementById("clogPanel"),x=document.getElementById("clogX");
+  if(btn&&panel)btn.addEventListener("click",function(){panel.hidden=!panel.hidden;});
+  if(x&&panel)x.addEventListener("click",function(){panel.hidden=true;});
+})();
 
 /* ===== INIT ===== */
 loadState();renderAll();tickCount();setInterval(tickCount,60000);setInterval(()=>{if(tab==='sched')render();},120000);
