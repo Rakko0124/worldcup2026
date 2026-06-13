@@ -2302,13 +2302,13 @@ const M=[
  ["C1","grp","C","2026-06-13T22:00:00Z","BRA","MAR","MetLife Stadium・紐約/紐澤西"],
  ["C2","grp","C","2026-06-14T01:00:00Z","HAI","SCO","Gillette Stadium・波士頓"],
  ["C3","grp","C","2026-06-19T22:00:00Z","SCO","MAR","Gillette Stadium・波士頓"],
- ["C4","grp","C","2026-06-20T00:30:00Z","BRA","HAI","Lincoln Financial Field・費城"],
+ ["C4","grp","C","2026-06-20T01:00:00Z","BRA","HAI","Lincoln Financial Field・費城"],
  ["C5","grp","C","2026-06-24T22:00:00Z","SCO","BRA","Hard Rock Stadium・邁阿密"],
  ["C6","grp","C","2026-06-24T22:00:00Z","MAR","HAI","Mercedes-Benz Stadium・亞特蘭大"],
  ["D1","grp","D","2026-06-13T01:00:00Z","USA","PAR","SoFi Stadium・洛杉磯"],
- ["D2","grp","D","2026-06-13T04:00:00Z","AUS","TUR","BC Place・溫哥華"],
+ ["D2","grp","D","2026-06-14T04:00:00Z","AUS","TUR","BC Place・溫哥華"],
  ["D3","grp","D","2026-06-19T19:00:00Z","USA","AUS","Lumen Field・西雅圖"],
- ["D4","grp","D","2026-06-20T03:00:00Z","TUR","PAR","Levi's Stadium・舊金山灣區"],
+ ["D4","grp","D","2026-06-20T04:00:00Z","TUR","PAR","Levi's Stadium・舊金山灣區"],
  ["D5","grp","D","2026-06-26T02:00:00Z","TUR","USA","SoFi Stadium・洛杉磯"],
  ["D6","grp","D","2026-06-26T02:00:00Z","PAR","AUS","Levi's Stadium・舊金山灣區"],
  ["E1","grp","E","2026-06-14T17:00:00Z","GER","CUW","NRG Stadium・休士頓"],
@@ -2320,7 +2320,7 @@ const M=[
  ["F1","grp","F","2026-06-14T20:00:00Z","NED","JPN","AT&T Stadium・達拉斯"],
  ["F2","grp","F","2026-06-15T02:00:00Z","SWE","TUN","Estadio BBVA・蒙特雷"],
  ["F3","grp","F","2026-06-20T17:00:00Z","NED","SWE","NRG Stadium・休士頓"],
- ["F4","grp","F","2026-06-20T04:00:00Z","TUN","JPN","Estadio BBVA・蒙特雷"],
+ ["F4","grp","F","2026-06-21T04:00:00Z","TUN","JPN","Estadio BBVA・蒙特雷"],
  ["F5","grp","F","2026-06-25T23:00:00Z","JPN","SWE","AT&T Stadium・達拉斯"],
  ["F6","grp","F","2026-06-25T23:00:00Z","TUN","NED","Arrowhead Stadium・堪薩斯城"],
  ["G1","grp","G","2026-06-15T19:00:00Z","BEL","EGY","Lumen Field・西雅圖"],
@@ -2342,7 +2342,7 @@ const M=[
  ["I5","grp","I","2026-06-26T19:00:00Z","NOR","FRA","Gillette Stadium・波士頓"],
  ["I6","grp","I","2026-06-26T19:00:00Z","SEN","IRQ","BMO Field・多倫多"],
  ["J1","grp","J","2026-06-17T01:00:00Z","ARG","ALG","Arrowhead Stadium・堪薩斯城"],
- ["J2","grp","J","2026-06-16T04:00:00Z","AUT","JOR","Levi's Stadium・舊金山灣區"],
+ ["J2","grp","J","2026-06-17T04:00:00Z","AUT","JOR","Levi's Stadium・舊金山灣區"],
  ["J3","grp","J","2026-06-22T17:00:00Z","ARG","AUT","AT&T Stadium・達拉斯"],
  ["J4","grp","J","2026-06-23T03:00:00Z","JOR","ALG","Levi's Stadium・舊金山灣區"],
  ["J5","grp","J","2026-06-28T02:00:00Z","JOR","ARG","AT&T Stadium・達拉斯"],
@@ -2441,7 +2441,7 @@ const ROUNDS=[["32 強",[73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88]],["16 
 
 /* ===== STATE ===== */
 let watch=new Set(), scores={}, koWin={}, viewMode="date", teamFilter="", tab="sched", memOnly=false;
-let liveSet=new Set(); const goalsById={}; const nameZh={}; const koPhase={};
+let liveSet=new Set(); const goalsById={}; const nameZh={}; const koPhase={}; let liveClock={};
 function loadState(){
  try{const w=localStorage.getItem("wc2026:watch");if(w)watch=new Set(JSON.parse(w));}catch(e){}
  try{const s=localStorage.getItem("wc2026:scores");if(s)scores=JSON.parse(s);}catch(e){}
@@ -2569,7 +2569,7 @@ function cardHTML(m){const p=twParts(m.kick),st=statusOf(m),sc=scores[m.id],w=wa
  const gl=goalsById[m.id];
  const goalsBlock=(gl&&gl.length)?`<div class="goals">${gl.map(g=>`<span class="goal"><span class="gm">${g.min||""}</span>${g.code&&T[g.code]?flagImg(g.code):""}<span class="gn">${g.who||"進球"}${nameZh[g.who]?`<span class="gz">${nameZh[g.who]}</span>`:""}${g.tag?`（${g.tag}）`:""}</span></span>`).join("")}</div>`:"";
  return `<div class="card ${w?'watched':''} ${st==='live'?'live':''}" data-id="${m.id}"><div class="when"><div class="t">${p.hour}:${p.minute}</div><div class="dm">${p.month}/${p.day} ${p.weekday}</div></div>
-  <div class="center"><div class="matchup">${mid}</div><div class="meta">${st==="upcoming"?`<span class="pill st-up">未開始</span>`:st==="live"?`<span class="pill st-live">● 進行中</span>`:`<span class="pill st-done">已結束</span>`}<span class="pill">${stageTag}</span>${m.venue?`<span>📍 ${m.venue}</span>`:""}</div>${goalsBlock}</div>
+  <div class="center"><div class="matchup">${mid}</div><div class="meta">${st==="upcoming"?`<span class="pill st-up">未開始</span>`:st==="live"?`<span class="pill st-live">● ${liveClock[m.id]||"進行中"}</span>`:`<span class="pill st-done">已結束</span>`}<span class="pill">${stageTag}</span>${m.venue?`<span>📍 ${m.venue}</span>`:""}</div>${goalsBlock}</div>
   <div class="actions"><button class="star ${w?'on':''}" data-star="${m.id}">★</button>${(T[m.h]&&T[m.a])?`<button class="cal" data-lu="${m.id}">📋 名單</button>`:""}<a class="cal elta" href="https://eltaott.tv/fifa2026" target="_blank" rel="noopener">📺 愛爾達</a><button class="cal" data-cal="${m.id}">📅 加入日曆</button></div></div>`;}
 function render(){
  const arr=visible();
@@ -2624,6 +2624,11 @@ let statusTimer;function setStatus(t){const s=document.getElementById("status");
 /* ===== LIVE AUTO-FETCH (ESPN public endpoint, no key) ===== */
 let lastFetch=0;
 function baseMin(dv){const m=String(dv||"").match(/(\d+)/);return m?parseInt(m[1]):0;}
+function liveClockStr(comp){const st=(comp.status)||{};const t=st.type||{};
+ const txt=((t.detail||"")+" "+(t.shortDetail||"")+" "+(t.description||"")).toLowerCase();
+ if(/half[\s-]*time|halftime|\bht\b/.test(txt))return "中場";
+ const dc=(st.displayClock||t.shortDetail||t.detail||"").toString().replace(/[''′]/g,"");const m=dc.match(/\d+(\+\d+)?/);
+ return m?(m[0]+"'"):"進行中";}
 function parseGoals(comp,idc,allowET){return (comp.details||[]).filter(d=>d.scoringPlay).map(d=>{const dv=(d.clock&&d.clock.displayValue)||"";const et=!!allowET&&baseMin(dv)>90;let tag=d.ownGoal?"烏龍":(d.penaltyKick?"十二碼":"");if(et)tag=tag?("延長·"+tag):"延長";return {code:idc[d.team&&d.team.id]||null,min:dv,who:(d.athletesInvolved&&d.athletesInvolved[0]&&(d.athletesInvolved[0].displayName||d.athletesInvolved[0].shortName))||"",tag};});}
 function setLive(t){document.querySelectorAll(".liveStatus").forEach(e=>e.textContent=t);}
 function fmtT(t){return new Intl.DateTimeFormat("zh-TW",{...TWZ,month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date(t));}
@@ -2634,7 +2639,7 @@ async function fetchLive(manual){
   const r=await fetch(url,{cache:"no-store"});
   if(!r.ok)throw new Error("HTTP "+r.status);
   const j=await r.json();const events=j.events||[];
-  let nG=0;const koPair={};const newLive=new Set();const koData={};
+  let nG=0;const koPair={};const newLive=new Set();const koData={};const newClock={};
   events.forEach(ev=>{const comp=ev.competitions&&ev.competitions[0];if(!comp)return;
    const cs=comp.competitors||[];if(cs.length<2)return;
    const H=cs.find(c=>c.homeAway==="home")||cs[0],A=cs.find(c=>c.homeAway==="away")||cs[1];
@@ -2645,7 +2650,7 @@ async function fetchLive(manual){
    const idc={};if(H.team)idc[H.team.id]=ch;if(A.team)idc[A.team.id]=ca;
    const gm=M.find(m=>m.stage==="grp"&&((m.h===ch&&m.a===ca)||(m.h===ca&&m.a===ch)));
    if(gm){
-     if(live)newLive.add(gm.id);
+     if(live){newLive.add(gm.id);newClock[gm.id]=liveClockStr(comp);}
      if((done||live)&&Number.isInteger(sh)&&Number.isInteger(sa)){scores[gm.id]={h:gm.h===ch?sh:sa,a:gm.h===ch?sa:sh};nG++;}
      if(done||live){const gs=parseGoals(comp,idc,false);if(gs.length)goalsById[gm.id]=gs;}
    }
@@ -2653,7 +2658,7 @@ async function fetchLive(manual){
      if(done){const w=H.winner?ch:(A.winner?ca:null);if(w)koPair[pairKey(ch,ca)]=w;}
      if(done||live){const dl=(st&&(st.detail||st.shortDetail||st.description))||"";const penH=parseInt(H.shootoutScore),penA=parseInt(A.shootoutScore);
        const gs=parseGoals(comp,idc,true);const aet=/extra|aet|a\.e\.t|延長/i.test(dl)||gs.some(g=>baseMin(g.min)>90)||Number.isInteger(penH);
-       koData[pairKey(ch,ca)]={ch,ca,sh,sa,live,done,gs,penH,penA,aet};}
+       koData[pairKey(ch,ca)]={ch,ca,sh,sa,live,done,gs,penH,penA,aet,clk:liveClockStr(comp)};}
    }
   });
   let changed=true,guard=0,adv=0;
@@ -2663,10 +2668,10 @@ async function fetchLive(manual){
    const flip=data.ch!==pa.code;const hs=flip?data.sa:data.sh,as=flip?data.sh:data.sa,pH=flip?data.penA:data.penH,pA=flip?data.penH:data.penA;
    if(Number.isInteger(hs)&&Number.isInteger(as))scores[mm.id]={h:hs,a:as};
    if(data.gs&&data.gs.length)goalsById[mm.id]=data.gs;
-   if(data.live)newLive.add(mm.id);
+   if(data.live){newLive.add(mm.id);newClock[mm.id]=data.clk;}
    koPhase[mm.id]={aet:data.aet,penH:pH,penA:pA};
   }
-  liveSet=newLive;
+  liveSet=newLive;liveClock=newClock;
   saveScores();saveKo();renderAll();enrichNames().then(c=>{if(c)renderAll();});lastFetch=Date.now();
   if(nG||adv)setLive(`✅ 已更新：小組賽 ${nG} 場、淘汰賽晉級 ${adv} 場　·　${fmtT(lastFetch)}`);
   else setLive(`ℹ️ 目前尚無已完成的比賽（賽事開始後會自動帶入）　·　${fmtT(lastFetch)}`);
