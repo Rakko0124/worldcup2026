@@ -57,6 +57,29 @@
   .clog-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:11px}
   .clog-list li{font-size:13px;line-height:1.55;color:var(--txt);border-left:2px solid var(--lime);padding-left:10px}
   .clog-list li .d{display:block;font-size:11px;color:var(--faint);font-family:"Oswald";letter-spacing:1px;margin-bottom:2px}
+  .lookup-able{cursor:pointer}
+  .tn{text-decoration:underline;text-decoration-style:dotted;text-decoration-color:var(--faint);text-underline-offset:3px}
+  .lu-nm.lookup-able{text-decoration:underline;text-decoration-style:dotted;text-decoration-color:var(--faint);text-underline-offset:3px}
+  .pp[data-look]{cursor:pointer}
+  .lu-hint{font-size:11.5px;color:var(--muted);margin:0 0 10px;padding:7px 10px;background:var(--surface);border:1px dashed var(--line2);border-radius:9px}
+  .lookup-bd{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:24px;-webkit-tap-highlight-color:transparent}
+  .lookup{width:min(330px,90vw);background:var(--bg2);border:1px solid var(--line2);border-radius:16px;padding:18px 18px 14px;box-shadow:0 16px 44px rgba(0,0,0,.6)}
+  .lookup h4{margin:0;font-family:"Anton";font-size:19px;letter-spacing:.5px;color:var(--txt);word-break:break-word}
+  .lookup .sub2{margin:2px 0 14px;font-size:12px;color:var(--muted)}
+  .lookup a{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--txt);background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:12px 14px;margin-bottom:9px;font-size:14px;font-weight:700;transition:.15s}
+  .lookup a:hover{border-color:var(--lime);color:var(--lime)}
+  .lookup .lk-x{all:unset;cursor:pointer;display:block;width:100%;box-sizing:border-box;text-align:center;color:var(--muted);font-size:13px;margin-top:4px;padding:9px;border-radius:9px}
+  .lookup .lk-x:hover{background:var(--surface)}
+  .pred{display:flex;align-items:center;gap:8px;margin-top:8px;padding-top:7px;border-top:1px dashed var(--line);font-size:12.5px;flex-wrap:wrap}
+  .pred-l{color:var(--muted);font-weight:700}
+  .pred-s{font-family:"Anton";font-size:16px;color:var(--lime);letter-spacing:1px}
+  .pred-r{font-weight:700;font-size:11.5px;padding:2px 9px;border-radius:999px}
+  .pred-r.hit{background:rgba(207,253,74,.16);color:var(--lime)}
+  .pred-r.near{background:rgba(247,201,72,.16);color:var(--gold)}
+  .pred-r.miss{background:rgba(255,77,61,.14);color:var(--red)}
+  .pred-tally{margin:0 0 14px;padding:11px 14px;background:var(--surface);border:1px solid var(--line2);border-radius:11px;font-size:12.5px;color:var(--txt);display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .pred-tally b{font-family:"Anton";color:var(--lime);font-size:15px;letter-spacing:.5px}
+  .pred-tally .tlbl{color:var(--muted)}
   .count{margin-top:14px;display:inline-flex;align-items:baseline;gap:10px;background:var(--surface);
     border:1px solid var(--line);border-radius:999px;padding:7px 15px}
   .count .n{font-family:"Anton";font-size:24px;color:var(--lime);line-height:1}
@@ -2477,24 +2500,26 @@ const KOSRC={
 const ROUNDS=[["32 強",[73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88]],["16 強",[89,90,91,92,93,94,95,96]],["8 強",[97,98,99,100]],["準決賽",[101,102]],["冠軍戰",[104]]];
 
 /* ===== STATE ===== */
-let watch=new Set(), scores={}, koWin={}, viewMode="date", teamFilter="", tab="sched", memOnly=false;
+let watch=new Set(), scores={}, koWin={}, preds={}, viewMode="date", teamFilter="", tab="sched", memOnly=false;
 let liveSet=new Set(); const goalsById={}; const nameZh={}; const koPhase={}; let liveClock={};
 function loadState(){
  try{const w=localStorage.getItem("wc2026:watch");if(w)watch=new Set(JSON.parse(w));}catch(e){}
  try{const s=localStorage.getItem("wc2026:scores");if(s)scores=JSON.parse(s);}catch(e){}
  try{const k=localStorage.getItem("wc2026:ko");if(k)koWin=JSON.parse(k);}catch(e){}
+ try{const pp=localStorage.getItem("wc2026:pred");if(pp)preds=JSON.parse(pp);}catch(e){}
  try{const nm=localStorage.getItem("wc2026:names2");if(nm)Object.assign(nameZh,JSON.parse(nm));}catch(e){}
 }
 function saveWatch(){try{localStorage.setItem("wc2026:watch",JSON.stringify([...watch]));}catch(e){memOnly=true;}}
 function saveScores(){try{localStorage.setItem("wc2026:scores",JSON.stringify(scores));}catch(e){memOnly=true;}}
 function saveKo(){try{localStorage.setItem("wc2026:ko",JSON.stringify(koWin));}catch(e){memOnly=true;}}
+function savePred(){try{localStorage.setItem("wc2026:pred",JSON.stringify(preds));}catch(e){memOnly=true;}}
 
 /* ===== HELPERS ===== */
 const TWZ={timeZone:"Asia/Taipei"};
 function twParts(iso){const d=new Date(iso);const p={};new Intl.DateTimeFormat("zh-TW",{...TWZ,month:"numeric",day:"numeric",weekday:"short",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(d).forEach(x=>p[x.type]=x.value);return p;}
 function twDateKey(iso){return new Intl.DateTimeFormat("en-CA",{...TWZ,year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(iso));}
 function tname(c){return T[c]?(T[c].fl+" "+T[c].zh):null;}
-function tlabel(c){return T[c]?`<span class="team">${flagImg(c)}${T[c].zh}</span>`:`<span class="team tbd">${c}</span>`;}
+function tlabel(c){return T[c]?`<span class="team lookup-able" data-look="team" data-code="${c}">${flagImg(c)}<span class="tn">${T[c].zh}</span></span>`:`<span class="team tbd">${c}</span>`;}
 function pad(n){return String(n).padStart(2,"0");}
 function icsStamp(iso){const d=new Date(iso);return d.getUTCFullYear()+pad(d.getUTCMonth()+1)+pad(d.getUTCDate())+"T"+pad(d.getUTCHours())+pad(d.getUTCMinutes())+"00Z";}
 function endIso(iso){return new Date(new Date(iso).getTime()+2*3600*1000).toISOString();}
@@ -2533,14 +2558,14 @@ function renderStandings(){
   html+=`<div class="gtable"><div class="gh"><span class="badge">${g}</span><span style="color:var(--muted);font-size:12px">${GROUPS[g].map(c=>flagName(c)).join("　")}</span></div>
    <table class="stand"><tr><th></th><th style="text-align:left">球隊</th><th>場</th><th>勝</th><th>和</th><th>負</th><th>進</th><th>失</th><th>淨</th><th>積分</th></tr>`;
   arr.forEach((r,i)=>{const cls=i<2?"q1":(i===2?("q3"+(top8.has(g)?" in":"")):"");
-   html+=`<tr class="${cls}"><td style="color:var(--faint)">${i+1}</td><td class="tm">${flagImg(r.code)}${T[r.code].zh}</td><td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td>${r.GF}</td><td>${r.GA}</td><td>${r.GD>0?"+":""}${r.GD}</td><td class="pts">${r.Pts}</td></tr>`;});
+   html+=`<tr class="${cls}"><td style="color:var(--faint)">${i+1}</td><td class="tm lookup-able" data-look="team" data-code="${r.code}">${flagImg(r.code)}<span class="tn">${T[r.code].zh}</span></td><td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td>${r.GF}</td><td>${r.GA}</td><td>${r.GD>0?"+":""}${r.GD}</td><td class="pts">${r.Pts}</td></tr>`;});
   html+=`</table></div>`;
  }
  // thirds ranking
  const thirds=allThirds();
  if(thirds.length){
   html+=`<div class="gtable"><div class="gh"><span class="badge" style="background:var(--gold)">第3名</span><span style="color:var(--muted);font-size:12px">各組第三名排名（前 8 名晉級 32 強）</span></div><table class="stand"><tr><th></th><th style="text-align:left">球隊</th><th>組</th><th>場</th><th>進</th><th>失</th><th>淨</th><th>積分</th></tr>`;
-  thirds.forEach((o,i)=>{const r=o.r;const cls=i<8?"q3 in":"";html+=`<tr class="${cls}"><td style="color:var(--faint)">${i+1}</td><td class="tm">${flagImg(r.code)}${T[r.code].zh}</td><td>${o.g}</td><td>${r.P}</td><td>${r.GF}</td><td>${r.GA}</td><td>${r.GD>0?"+":""}${r.GD}</td><td class="pts">${r.Pts}</td></tr>`;});
+  thirds.forEach((o,i)=>{const r=o.r;const cls=i<8?"q3 in":"";html+=`<tr class="${cls}"><td style="color:var(--faint)">${i+1}</td><td class="tm lookup-able" data-look="team" data-code="${r.code}">${flagImg(r.code)}<span class="tn">${T[r.code].zh}</span></td><td>${o.g}</td><td>${r.P}</td><td>${r.GF}</td><td>${r.GA}</td><td>${r.GD>0?"+":""}${r.GD}</td><td class="pts">${r.Pts}</td></tr>`;});
   html+=`</table></div>`;
  }
  const any=Object.keys(GROUPS).some(g=>computeGroup(g)[0].P>0);
@@ -2594,7 +2619,23 @@ function visible(){let arr=M.slice();if(teamFilter)arr=arr.filter(m=>m.h===teamF
  else if(viewMode==="done")arr=arr.filter(isFinished);
  else arr=arr.filter(m=>!isFinished(m));
  return arr;}
-function cardHTML(m){const p=twParts(m.kick),st=statusOf(m),sc=scores[m.id],w=watch.has(m.id);let mid;
+/* ===== AI SCORE PREDICTION (built-in rating model) ===== */
+const RATING={ESP:92,FRA:92,ARG:91,ENG:90,BRA:89,POR:89,NED:87,GER:86,BEL:84,CRO:84,URU:83,COL:83,MAR:83,NOR:81,SUI:80,JPN:80,SEN:80,TUR:79,USA:79,MEX:79,AUT:79,CZE:78,ECU:78,EGY:78,ALG:78,CIV:77,KOR:77,IRN:77,BIH:77,SWE:77,CAN:76,SCO:76,GHA:76,AUS:75,COD:75,TUN:75,RSA:74,QAT:74,PAR:74,KSA:72,UZB:72,PAN:71,IRQ:71,JOR:70,CPV:70,NZL:70,HAI:67,CUW:66};
+function hashStr(s){let h=2166136261>>>0;s=String(s);for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return h>>>0;}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function poisson(lam,rnd){const L=Math.exp(-lam);let k=0,p=1;do{k++;p*=rnd();}while(p>L&&k<14);return k-1;}
+function predictScore(m,hc,ac){const rA=RATING[hc]||72,rB=RATING[ac]||72;
+ const expA=Math.max(0.25,Math.min(3.6,1.35+(rA-rB)/22)),expB=Math.max(0.25,Math.min(3.6,1.35+(rB-rA)/22));
+ const rnd=mulberry32(hashStr("wc26:"+m.id));
+ return {h:Math.min(poisson(expA,rnd),6),a:Math.min(poisson(expB,rnd),6)};}
+function evalPred(pr,sc){const exact=pr.h===sc.h&&pr.a===sc.a,so=Math.sign(pr.h-pr.a)===Math.sign(sc.h-sc.a);
+ if(exact)return `<span class="pred-r hit">✅ 命中！</span>`;
+ if(so)return `<span class="pred-r near">🟡 猜對勝負</span>`;
+ return `<span class="pred-r miss">❌ 沒中（實際 ${sc.h}-${sc.a}）</span>`;}
+function codesOf(m){if(m.stage!=="grp"&&m.no){const[pa,pb]=partsOf(m.no);return[pa.code||null,pb.code||null];}return[m.h,m.a];}
+function doPredict(id){const m=M.find(x=>x.id===id);if(!m||preds[id])return;const[hc,ac]=codesOf(m);if(!(T[hc]&&T[ac]))return;preds[id]=predictScore(m,hc,ac);savePred();render();}
+function predTally(){let exact=0,outc=0,tot=0;Object.keys(preds).forEach(id=>{const m=M.find(x=>x.id===id);if(!m)return;const s=statusOf(m);if((s==="done"||s==="await")&&scores[id]){tot++;const pr=preds[id],sc=scores[id];if(pr.h===sc.h&&pr.a===sc.a)exact++;else if(Math.sign(pr.h-pr.a)===Math.sign(sc.h-sc.a))outc++;}});return{exact,outc,tot};}
+function cardHTML(m){const p=twParts(m.kick),st=statusOf(m),sc=scores[m.id],w=watch.has(m.id);let mid;const [hc,ac]=codesOf(m),pr=preds[m.id];let predBlock="";if(pr){let res="";if((st==="done"||st==="await")&&sc)res=evalPred(pr,sc);predBlock=`<div class="pred"><span class="pred-l">🔮 AI 預測</span><span class="pred-s">${pr.h} - ${pr.a}</span>${res}</div>`;}const predBtn=(!pr&&T[hc]&&T[ac])?`<button class="cal pred-btn" data-pred="${m.id}">🔮 預測</button>`:"";
  let hSide,aSide;
  if(m.stage!=="grp"&&m.no){const[pa,pb]=partsOf(m.no);hSide=pa.code?tlabel(pa.code):`<span class="team tbd">${pa.label||m.h}</span>`;aSide=pb.code?tlabel(pb.code):`<span class="team tbd">${pb.label||m.a}</span>`;}
  else{hSide=tlabel(m.h);aSide=tlabel(m.a);}
@@ -2606,12 +2647,13 @@ function cardHTML(m){const p=twParts(m.kick),st=statusOf(m),sc=scores[m.id],w=wa
  const gl=goalsById[m.id];
  const goalsBlock=(gl&&gl.length)?`<div class="goals">${gl.map(g=>`<span class="goal"><span class="gm">${g.min||""}</span>${g.code&&T[g.code]?flagImg(g.code):""}<span class="gn">${g.who||"進球"}${nameZh[g.who]?`<span class="gz">${nameZh[g.who]}</span>`:""}${g.tag?`（${g.tag}）`:""}</span></span>`).join("")}</div>`:"";
  return `<div class="card ${w?'watched':''} ${st==='live'?'live':''}" data-id="${m.id}"><div class="when"><div class="t">${p.hour}:${p.minute}</div><div class="dm">${p.month}/${p.day} ${p.weekday}</div></div>
-  <div class="center"><div class="matchup">${mid}</div><div class="meta">${st==="upcoming"?`<span class="pill st-up">未開始</span>`:st==="live"?`<span class="pill st-live">● ${liveClock[m.id]||"進行中"}</span>`:`<span class="pill st-done">已結束</span>`}<span class="pill">${stageTag}</span>${m.venue?`<span>📍 ${m.venue}</span>`:""}</div>${goalsBlock}</div>
-  <div class="actions"><button class="star ${w?'on':''}" data-star="${m.id}">★</button>${(T[m.h]&&T[m.a])?`<button class="cal" data-lu="${m.id}">📋 名單</button>`:""}<a class="cal elta" href="https://eltaott.tv/fifa2026" target="_blank" rel="noopener">📺 愛爾達</a><button class="cal" data-cal="${m.id}">📅 加入日曆</button></div></div>`;}
+  <div class="center"><div class="matchup">${mid}</div><div class="meta">${st==="upcoming"?`<span class="pill st-up">未開始</span>`:st==="live"?`<span class="pill st-live">● ${liveClock[m.id]||"進行中"}</span>`:`<span class="pill st-done">已結束</span>`}<span class="pill">${stageTag}</span>${m.venue?`<span>📍 ${m.venue}</span>`:""}</div>${goalsBlock}${predBlock}</div>
+  <div class="actions"><button class="star ${w?'on':''}" data-star="${m.id}">★</button>${(T[m.h]&&T[m.a])?`<button class="cal" data-lu="${m.id}">📋 名單</button>`:""}${predBtn}<a class="cal elta" href="https://eltaott.tv/fifa2026" target="_blank" rel="noopener">📺 愛爾達</a><button class="cal" data-cal="${m.id}">📅 加入日曆</button></div></div>`;}
 function render(){
  const arr=visible();
  if(!arr.length){listEl.innerHTML=`<div class="empty">${viewMode==='watch'?'還沒有關注任何比賽。<br>點比賽右上角的 ★ 加入關注。':viewMode==='done'?'目前還沒有已結束的比賽。<br>踢完的比賽會自動移到這裡。':'沒有符合的比賽（可能都已結束，可到「已結束」分頁查看）。'}</div>`;return;}
  let html="";
+ const pt=predTally();if(pt.tot)html+=`<div class="pred-tally"><b>🔮 ${pt.exact} 中</b><span class="tlbl">AI 預測戰績 · 命中比分 ${pt.exact} ・ 猜對勝負 ${pt.outc} ・ 共 ${pt.tot} 場</span></div>`;
  if(viewMode==="group"){
   for(const g of Object.keys(GROUPS)){const ms=arr.filter(m=>m.stage==="grp"&&m.group===g);if(!ms.length)continue;
    html+=`<div class="grouphead"><span class="badge">${g}</span><span class="teams">${GROUPS[g].map(c=>flagName(c)).join("　")}</span></div>`+ms.map(cardHTML).join("");}
@@ -2755,6 +2797,7 @@ document.getElementById("icsBtn").addEventListener("click",exportICS);
 listEl.addEventListener("click",e=>{const star=e.target.closest("[data-star]");if(star){const id=star.dataset.star;watch.has(id)?watch.delete(id):watch.add(id);saveWatch();render();return;}
  const lu=e.target.closest("[data-lu]");if(lu){toggleLineup(lu.dataset.lu,lu);return;}
  const cal=e.target.closest("[data-cal]");if(cal){window.open(gcalUrl(M.find(x=>x.id===cal.dataset.cal)),"_blank");return;}
+ const pd=e.target.closest("[data-pred]");if(pd){doPredict(pd.dataset.pred);return;}
  const ed=e.target.closest("[data-edit]");if(ed){openScoreEdit(ed,ed.dataset.edit);return;}});
 
 /* ===== LINEUPS (ESPN summary, ~1h before kickoff) ===== */
@@ -2766,7 +2809,7 @@ function posZh(p){const pos=p.position||{};const ab=(pos.abbreviation||"").toUpp
  if(POS_ZH[ab])return POS_ZH[ab];
  if(/goal/.test(nm))return "門將";if(/back|defen/.test(nm))return "後衛";if(/midfield/.test(nm))return "中場";if(/forward|striker|wing/.test(nm))return "前鋒";
  return pos.abbreviation||pos.name||"";}
-function luRow(p){const a=p.athlete||{};const num=p.jersey?p.jersey:"";const nm=a.displayName||a.shortName||a.fullName||"";const zh=nameZh[nm];return `<div class="lu-row"><span class="lu-num">${num}</span><span class="lu-nm">${nm}${zh?`<span class="lu-zh">${zh}</span>`:""}</span><span class="lu-pos">${posZh(p)}</span></div>`;}
+function luRow(p){const a=p.athlete||{};const num=p.jersey?p.jersey:"";const nm=a.displayName||a.shortName||a.fullName||"";const zh=nameZh[nm];return `<div class="lu-row"><span class="lu-num">${num}</span><span class="lu-nm lookup-able" data-look="player" data-nm="${escAttr(nm)}" data-zh="${escAttr(zh||"")}">${nm}${zh?`<span class="lu-zh">${zh}</span>`:""}</span><span class="lu-pos">${posZh(p)}</span></div>`;}
 function lineOf(p){const nm=((p.position&&p.position.name)||"").toLowerCase();const ab=((p.position&&p.position.abbreviation)||"").toUpperCase();
  if(/goalkeep/.test(nm)||ab==="G"||ab==="GK")return 0;
  if(/defen|sweeper|back/.test(nm))return 1;
@@ -2782,9 +2825,9 @@ function formationLines(rs){const players=(rs.roster||[]).filter(p=>p.starter);i
  return lines.filter(l=>l.length);}
 function formationStr(rows){return rows?rows.filter((l,i)=>i>0).map(l=>l.length).join("-"):"";}
 function pitchHTML(rows,side){if(!rows||!rows.length)return "";const n=rows.length;let dots="";
- rows.forEach((row,ri)=>{const y=100-((ri+0.5)/n*100);row.forEach((p,ci)=>{const x=((ci+0.5)/row.length)*100;const a=p.athlete||{};const num=p.jersey||"";const nm=nameZh[a.displayName]||a.shortName||a.displayName||"";dots+=`<div class="pp pp-${side}" style="left:${x}%;top:${y}%"><span class="pp-n">${num}</span><span class="pp-l">${nm}</span></div>`;});});
+ rows.forEach((row,ri)=>{const y=100-((ri+0.5)/n*100);row.forEach((p,ci)=>{const x=((ci+0.5)/row.length)*100;const a=p.athlete||{};const num=p.jersey||"";const nm=nameZh[a.displayName]||a.shortName||a.displayName||"";dots+=`<div class="pp pp-${side}" data-look="player" data-nm="${escAttr(a.displayName||"")}" data-zh="${escAttr(nameZh[a.displayName]||"")}" style="left:${x}%;top:${y}%"><span class="pp-n">${num}</span><span class="pp-l">${nm}</span></div>`;});});
  return `<div class="pitch">${dots}</div>`;}
-function lineupHTML(rosters,m){let html='<div class="lu-grid">';
+function lineupHTML(rosters,m){let html='<div class="lu-hint">💡 點球員名字或圓點 → 查中文維基／Google</div><div class="lu-grid">';
  rosters.forEach(rs=>{const code=matchCode(rs.team)||(rs.homeAway==="home"?m.h:m.a);const side=rs.homeAway==="away"?"a":"h";
   const players=rs.roster||[];const starters=players.filter(p=>p.starter);const subs=players.filter(p=>!p.starter);
   const rows=formationLines(rs);const fstr=formationStr(rows);const form=fstr?` · ${fstr}`:"";
@@ -2827,6 +2870,28 @@ document.getElementById("foot").innerHTML=`資料來源：FIFA 官方賽程與�
  「📋 名單」會在開賽前約 1 小時、名單公布後顯示該場先發與替補（來源 ESPN，僅線上主機可用）；國旗為內嵌向量圖，離線或任何裝置都能正確顯示。<br>
  最佳第三名的分配 FIFA 採對照表，這裡先以文字標示，可手動點選晉級。你的關注、比分與晉級結果儲存在「這個裝置的瀏覽器」，不會上傳；手機與電腦各自獨立。淘汰賽場館與時間以官方公告為準。`;
 
+/* ===== QUICK LOOKUP (Wikipedia / Google) ===== */
+function escAttr(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function escHtml(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function lookupData(kind,name,zh,code){
+ if(kind==="team"){const zhName=(code&&T[code])?T[code].zh:(zh||name||"");const fl=(code&&T[code])?T[code].fl:"";const q=zhName+"國家足球隊";
+  return {title:(fl?fl+" ":"")+zhName+" 國家隊",sub:"查這支球隊",links:[
+   {ic:"📖",t:"中文維基百科",u:"https://zh.wikipedia.org/w/index.php?search="+encodeURIComponent(q)},
+   {ic:"🔍",t:"Google 搜尋",u:"https://www.google.com/search?q="+encodeURIComponent(q)}]};}
+ const wu=zh?("https://zh.wikipedia.org/wiki/"+encodeURIComponent(zh)):("https://zh.wikipedia.org/w/index.php?search="+encodeURIComponent(name||""));
+ return {title:(name||"")+(zh?(" "+zh):""),sub:"查這位球員",links:[
+   {ic:"📖",t:"中文維基百科",u:wu},
+   {ic:"🔍",t:"Google 搜尋",u:"https://www.google.com/search?q="+encodeURIComponent((zh||name||"")+" 足球")}]};}
+function closeLookup(){const x=document.getElementById("lookupBd");if(x)x.remove();}
+function openLookup(kind,name,zh,code){closeLookup();const d=lookupData(kind,name,zh,code);
+ const bd=document.createElement("div");bd.className="lookup-bd";bd.id="lookupBd";
+ bd.innerHTML='<div class="lookup" role="dialog" aria-modal="true"><h4>'+escHtml(d.title)+'</h4><p class="sub2">'+d.sub+'</p>'+d.links.map(function(l){return '<a href="'+l.u+'" target="_blank" rel="noopener">'+l.ic+' '+escHtml(l.t)+'</a>';}).join("")+'<button class="lk-x">關閉</button></div>';
+ document.body.appendChild(bd);
+ bd.addEventListener("click",function(e){if(e.target===bd||e.target.classList.contains("lk-x"))closeLookup();});}
+document.addEventListener("click",function(e){const el=e.target.closest("[data-look]");if(!el)return;
+ if(el.dataset.look==="team")openLookup("team",null,null,el.dataset.code);
+ else openLookup("player",el.dataset.nm||"",el.dataset.zh||"",null);});
+
 /* ===== THEME SWITCHER ===== */
 function applyTheme(name){
   if(name&&name!=="default")document.documentElement.setAttribute("data-theme",name);
@@ -2843,6 +2908,8 @@ function applyTheme(name){
 
 /* ===== CHANGELOG ===== */
 var CHANGELOG=[
+ {d:"6/13",t:"新增 🔮 AI 預測比分(內建模型,純好玩):在還沒踢的比賽點「🔮 預測」,它會給一個比分並當場鎖定——因為用比賽 ID 當種子、公式固定,事後想偷改也改不了 😏。賽後自動對獎標命中,還會幫你累積戰績。"},
+ {d:"6/13",t:"看到喜歡的球員或球隊,直接點名字就能一鍵跳到中文維基或 Google,不用再自己離開 App 慢慢查 🔎(名單裡的球員、卡片和積分榜的隊名都可以點)。"},
  {d:"6/13",t:"加了主題切換!現在能在 預設綠 / 波赫 / 西班牙 之間切換,挑你看比賽當下喜歡的氣氛。"},
  {d:"6/13",t:"純屬個人喜好——波赫的隊服太可愛,加了波赫藍金主題 🐻(順帶一提,球衣上那個「熊掌」其實是西班牙品牌 Kelme 的爪印 logo,不是在地牌子)。"},
  {d:"6/13",t:"進行中的比賽現在會直接顯示踢到第幾分鐘(● 67'、● 中場),不用再自己猜。"},
