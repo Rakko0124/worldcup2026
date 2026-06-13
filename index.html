@@ -30,12 +30,6 @@
     --txt:#fbf0ef; --muted:#d6a9a6; --faint:#9d6b68;
     --lime:#ffc400; --lime-dim:#d9a300; --red:#ff5a4d; --gold:#ffd24a; --blue:#5aa0ff;
   }
-  [data-theme="colombia"]{
-    --bg:#0c1430; --bg2:#111a3e; --surface:#16224f; --surface2:#1d2e66;
-    --line:#283c74; --line2:#3a5192;
-    --txt:#f6f7fc; --muted:#aeb6d0; --faint:#6c7699;
-    --lime:#ffd400; --lime-dim:#d9b400; --red:#e23b4a; --gold:#ffdc4a; --blue:#3a6fd8;
-  }
   *{box-sizing:border-box}
   html,body{margin:0}
   body{background:var(--bg);color:var(--txt);font-family:"Noto Sans TC","Oswald",system-ui,sans-serif;
@@ -2250,7 +2244,6 @@
       <button class="tpill" data-theme="default">🟢 預設</button>
       <button class="tpill" data-theme="bih">🔵 波赫</button>
       <button class="tpill" data-theme="spain">🔴 西班牙</button>
-      <button class="tpill" data-theme="colombia">🟡 哥倫比亞</button>
     </div>
   </header>
 </div>
@@ -2850,7 +2843,7 @@ function applyTheme(name){
 
 /* ===== CHANGELOG ===== */
 var CHANGELOG=[
- {d:"6/13",t:"加了主題切換!現在能在 預設綠 / 波赫 / 西班牙 / 哥倫比亞 之間切換,順手把西班牙跟哥倫比亞也偷塞進來(因為都想要)。"},
+ {d:"6/13",t:"加了主題切換!現在能在 預設綠 / 波赫 / 西班牙 之間切換,挑你看比賽當下喜歡的氣氛。"},
  {d:"6/13",t:"純屬個人喜好——波赫的隊服太可愛,加了波赫藍金主題 🐻(順帶一提,球衣上那個「熊掌」其實是西班牙品牌 Kelme 的爪印 logo,不是在地牌子)。"},
  {d:"6/13",t:"進行中的比賽現在會直接顯示踢到第幾分鐘(● 67'、● 中場),不用再自己猜。"},
  {d:"6/13",t:"把全部 104 場對了一次官方賽程,抓到 5 個手殘的開賽時間錯誤並修正,真是不好意思 😅。"},
