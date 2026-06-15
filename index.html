@@ -138,14 +138,19 @@
   .lu-nm{flex:1} .lu-pos{color:var(--faint);font-size:11px}
   .lu-msg,.lu-load{color:var(--muted);font-size:12.5px;padding:4px 0}
   .lu-zh{color:var(--muted);font-weight:400;font-size:11px;margin-left:5px}
-  .pitch{position:relative;width:100%;max-width:300px;margin:10px auto 4px;aspect-ratio:68/100;background:radial-gradient(circle at 50% 50%,transparent 36px,rgba(255,255,255,.10) 37px,transparent 38px),linear-gradient(#1d3a23,#234a2c);border:1px solid rgba(255,255,255,.16);border-radius:10px;overflow:hidden}
+  .pitch{position:relative;width:100%;max-width:330px;margin:10px auto 4px;aspect-ratio:68/100;background:radial-gradient(circle at 50% 50%,transparent 36px,rgba(255,255,255,.10) 37px,transparent 38px),linear-gradient(#1d3a23,#234a2c);border:1px solid rgba(255,255,255,.16);border-radius:10px;overflow:hidden}
   .pitch::before{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(255,255,255,.16)}
   .pitch::after{content:"";position:absolute;left:30%;right:30%;bottom:0;height:13%;border:1px solid rgba(255,255,255,.14);border-bottom:none;border-radius:3px 3px 0 0}
-  .pp{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;width:52px;pointer-events:none}
-  .pp-n{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:"Oswald";font-weight:700;font-size:12px;box-shadow:0 1px 3px rgba(0,0,0,.55)}
+  .pp{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;width:62px;pointer-events:auto;cursor:pointer}
+  .pp-av{position:relative;width:40px;height:40px;border-radius:50%;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.6);border:2px solid rgba(255,255,255,.65)}
+  .pp-h .pp-av{border-color:var(--lime)}
+  .pp-a .pp-av{border-color:var(--blue)}
+  .pp-n{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:"Oswald";font-weight:700;font-size:14px}
   .pp-h .pp-n{background:var(--lime);color:#0a0d0b}
   .pp-a .pp-n{background:var(--blue);color:#0a1429}
-  .pp-l{font-size:9.5px;margin-top:2px;color:#fff;text-align:center;text-shadow:0 1px 2px #000;line-height:1.05;max-height:22px;overflow:hidden}
+  .pp-ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:linear-gradient(#16304a,#0d1f14)}
+  .pp-l{font-size:9.5px;margin-top:3px;color:#fff;text-align:center;text-shadow:0 1px 2px #000;line-height:1.1;max-height:24px;overflow:hidden;max-width:64px}
+  .pp-no{font-weight:800;color:#fff;opacity:.8;margin-right:1px}
   .goals{display:flex;flex-direction:column;gap:3px;margin-top:8px;padding-top:7px;border-top:1px dashed var(--line)}
   .goal{font-size:12.5px;display:flex;align-items:baseline;gap:7px}
   .goal::before{content:"⚽";font-size:11px;line-height:1.2}
@@ -2825,7 +2830,7 @@ function formationLines(rs){const players=(rs.roster||[]).filter(p=>p.starter);i
  return lines.filter(l=>l.length);}
 function formationStr(rows){return rows?rows.filter((l,i)=>i>0).map(l=>l.length).join("-"):"";}
 function pitchHTML(rows,side){if(!rows||!rows.length)return "";const n=rows.length;let dots="";
- rows.forEach((row,ri)=>{const y=100-((ri+0.5)/n*100);row.forEach((p,ci)=>{const x=((ci+0.5)/row.length)*100;const a=p.athlete||{};const num=p.jersey||"";const nm=nameZh[a.displayName]||a.shortName||a.displayName||"";dots+=`<div class="pp pp-${side}" data-look="player" data-nm="${escAttr(a.displayName||"")}" data-zh="${escAttr(nameZh[a.displayName]||"")}" style="left:${x}%;top:${y}%"><span class="pp-n">${num}</span><span class="pp-l">${nm}</span></div>`;});});
+ rows.forEach((row,ri)=>{const y=100-((ri+0.5)/n*100);row.forEach((p,ci)=>{const x=((ci+0.5)/row.length)*100;const a=p.athlete||{};const num=p.jersey||"";const nm=nameZh[a.displayName]||a.shortName||a.displayName||"";const id=a.id||"";const ph=id?`<img class="pp-ph" src="https://a.espncdn.com/i/headshots/soccer/players/full/${id}.png" alt="" loading="lazy" onerror="this.remove()">`:"";dots+=`<div class="pp pp-${side}" data-look="player" data-nm="${escAttr(a.displayName||"")}" data-zh="${escAttr(nameZh[a.displayName]||"")}" style="left:${x}%;top:${y}%"><div class="pp-av"><span class="pp-n">${num}</span>${ph}</div><span class="pp-l"><span class="pp-no">${num}</span>${nm}</span></div>`;});});
  return `<div class="pitch">${dots}</div>`;}
 function lineupHTML(rosters,m){let html='<div class="lu-hint">💡 點球員名字或圓點 → 查中文維基／Google</div><div class="lu-grid">';
  rosters.forEach(rs=>{const code=matchCode(rs.team)||(rs.homeAway==="home"?m.h:m.a);const side=rs.homeAway==="away"?"a":"h";
@@ -2908,6 +2913,7 @@ function applyTheme(name){
 
 /* ===== CHANGELOG ===== */
 var CHANGELOG=[
+ {d:"6/13",t:"陣容圖的圓點升級成球員大頭照(抓 ESPN 的頭像)📸,沒有照片的球員會自動退回號碼圓圈。某位龜毛同事點名要的 😏。"},
  {d:"6/13",t:"新增 🔮 AI 預測比分(內建模型,純好玩):在還沒踢的比賽點「🔮 預測」,它會給一個比分並當場鎖定——因為用比賽 ID 當種子、公式固定,事後想偷改也改不了 😏。賽後自動對獎標命中,還會幫你累積戰績。"},
  {d:"6/13",t:"看到喜歡的球員或球隊,直接點名字就能一鍵跳到中文維基或 Google,不用再自己離開 App 慢慢查 🔎(名單裡的球員、卡片和積分榜的隊名都可以點)。"},
  {d:"6/13",t:"加了主題切換!現在能在 預設綠 / 波赫 / 西班牙 之間切換,挑你看比賽當下喜歡的氣氛。"},
