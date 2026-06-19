@@ -157,6 +157,12 @@
   .goal .gm{font-family:"Oswald";font-weight:600;color:var(--lime);min-width:34px}
   .goal .gn{flex:1;font-weight:700}
   .goal .gz{color:var(--muted);font-weight:500;margin-left:6px;font-size:12px}
+  .cards{display:flex;flex-direction:column;gap:3px;margin-top:8px;padding-top:7px;border-top:1px dashed var(--line)}
+  .cardEv{font-size:12.5px;display:flex;align-items:baseline;gap:7px}
+  .cardEv .gm{font-family:"Oswald";font-weight:600;color:var(--gold);min-width:34px}
+  .cardEv .ci{font-size:10px;line-height:1.2}
+  .cardEv .gn{flex:1;font-weight:700}
+  .cardEv .gz{color:var(--muted);font-weight:500;margin-left:6px;font-size:12px}
   .phase{font-family:"Oswald";font-size:11px;font-weight:600;color:var(--gold);border:1px solid var(--line2);border-radius:6px;padding:1px 6px;margin-left:4px;white-space:nowrap}
   .goal .gt{color:var(--muted);font-size:11.5px;white-space:nowrap}
   .pill.live-pill{color:var(--red);border-color:var(--red);font-weight:700}
@@ -2506,7 +2512,7 @@ const ROUNDS=[["32 強",[73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88]],["16 
 
 /* ===== STATE ===== */
 let watch=new Set(), scores={}, koWin={}, preds={}, viewMode="date", teamFilter="", tab="sched", memOnly=false;
-let liveSet=new Set(); const goalsById={}; const nameZh={}; const koPhase={}; let liveClock={};
+let liveSet=new Set(); const goalsById={}; const cardsById={}; const nameZh={}; const koPhase={}; let liveClock={};
 function loadState(){
  try{const w=localStorage.getItem("wc2026:watch");if(w)watch=new Set(JSON.parse(w));}catch(e){}
  try{const s=localStorage.getItem("wc2026:scores");if(s)scores=JSON.parse(s);}catch(e){}
@@ -2649,10 +2655,11 @@ function cardHTML(m){const p=twParts(m.kick),st=statusOf(m),sc=scores[m.id],w=wa
  if(sc)mid=`${hSide}<span class="score" data-edit="${m.id}">${sc.h} : ${sc.a}</span>${aSide}${phase}`;
  else{const tag=st==="live"?`<span class="live-dot">LIVE</span>`:st==="await"?`<span class="score" data-edit="${m.id}">輸入比分</span>`:`<span class="vs">VS</span>`;mid=`${hSide}${tag}${aSide}`;}
  const stageTag=m.stage==="grp"?`${m.group} 組`:(m.no?`賽事 ${m.no}`:m.group);
- const gl=goalsById[m.id];
+ const gl=goalsById[m.id];const cl=cardsById[m.id];
  const goalsBlock=(gl&&gl.length)?`<div class="goals">${gl.map(g=>`<span class="goal"><span class="gm">${g.min||""}</span>${g.code&&T[g.code]?flagImg(g.code):""}<span class="gn">${g.who||"進球"}${nameZh[g.who]?`<span class="gz">${nameZh[g.who]}</span>`:""}${g.tag?`（${g.tag}）`:""}</span></span>`).join("")}</div>`:"";
+ const cardsBlock=(cl&&cl.length)?`<div class="cards">${cl.map(c=>`<span class="cardEv"><span class="gm">${c.min||""}</span>${c.code&&T[c.code]?flagImg(c.code):""}<span class="ci">${c.kind==="R"?"🟥":c.kind==="YR"?"🟨🟥":"🟨"}</span><span class="gn">${c.who||""}${nameZh[c.who]?`<span class="gz">${nameZh[c.who]}</span>`:""}</span></span>`).join("")}</div>`:"";
  return `<div class="card ${w?'watched':''} ${st==='live'?'live':''}" data-id="${m.id}"><div class="when"><div class="t">${p.hour}:${p.minute}</div><div class="dm">${p.month}/${p.day} ${p.weekday}</div></div>
-  <div class="center"><div class="matchup">${mid}</div><div class="meta">${st==="upcoming"?`<span class="pill st-up">未開始</span>`:st==="live"?`<span class="pill st-live">● ${liveClock[m.id]||"進行中"}</span>`:`<span class="pill st-done">已結束</span>`}<span class="pill">${stageTag}</span>${m.venue?`<span>📍 ${m.venue}</span>`:""}</div>${goalsBlock}${predBlock}</div>
+  <div class="center"><div class="matchup">${mid}</div><div class="meta">${st==="upcoming"?`<span class="pill st-up">未開始</span>`:st==="live"?`<span class="pill st-live">● ${liveClock[m.id]||"進行中"}</span>`:`<span class="pill st-done">已結束</span>`}<span class="pill">${stageTag}</span>${m.venue?`<span>📍 ${m.venue}</span>`:""}</div>${goalsBlock}${cardsBlock}${predBlock}</div>
   <div class="actions"><button class="star ${w?'on':''}" data-star="${m.id}">★</button>${(T[m.h]&&T[m.a])?`<button class="cal" data-lu="${m.id}">📋 名單</button>`:""}${predBtn}<a class="cal elta" href="https://eltaott.tv/fifa2026" target="_blank" rel="noopener">📺 愛爾達</a><button class="cal" data-cal="${m.id}">📅 加入日曆</button></div></div>`;}
 function render(){
  const arr=visible();
@@ -2714,6 +2721,7 @@ function liveClockStr(comp){const st=(comp.status)||{};const t=st.type||{};
  const dc=(st.displayClock||t.shortDetail||t.detail||"").toString().replace(/[''′]/g,"");const m=dc.match(/\d+(\+\d+)?/);
  return m?(m[0]+"'"):"進行中";}
 function parseGoals(comp,idc,allowET){return (comp.details||[]).filter(d=>d.scoringPlay).map(d=>{const dv=(d.clock&&d.clock.displayValue)||"";const et=!!allowET&&baseMin(dv)>90;let tag=d.ownGoal?"烏龍":(d.penaltyKick?"十二碼":"");if(et)tag=tag?("延長·"+tag):"延長";return {code:idc[d.team&&d.team.id]||null,min:dv,who:(d.athletesInvolved&&d.athletesInvolved[0]&&(d.athletesInvolved[0].displayName||d.athletesInvolved[0].shortName))||"",tag};});}
+function parseCards(comp,idc){return (comp.details||[]).filter(d=>{const tt=((d.type&&(d.type.text||d.type.name))||"").toLowerCase();return d.yellowCard||d.redCard||tt.indexOf("card")>=0;}).map(d=>{const dv=(d.clock&&d.clock.displayValue)||"";const tt=((d.type&&(d.type.text||d.type.name))||"").toLowerCase();const isRed=!!d.redCard||tt.indexOf("red")>=0,isYel=!!d.yellowCard||tt.indexOf("yellow")>=0;const kind=(isRed&&isYel)?"YR":(isRed?"R":"Y");return {code:idc[d.team&&d.team.id]||null,min:dv,who:(d.athletesInvolved&&d.athletesInvolved[0]&&(d.athletesInvolved[0].displayName||d.athletesInvolved[0].shortName))||"",kind};});}
 function setLive(t){document.querySelectorAll(".liveStatus").forEach(e=>e.textContent=t);}
 function fmtT(t){return new Intl.DateTimeFormat("zh-TW",{...TWZ,month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date(t));}
 async function fetchLive(manual){
@@ -2736,13 +2744,13 @@ async function fetchLive(manual){
    if(gm){
      if(live){newLive.add(gm.id);newClock[gm.id]=liveClockStr(comp);}
      if((done||live)&&Number.isInteger(sh)&&Number.isInteger(sa)){scores[gm.id]={h:gm.h===ch?sh:sa,a:gm.h===ch?sa:sh};nG++;}
-     if(done||live){const gs=parseGoals(comp,idc,false);if(gs.length)goalsById[gm.id]=gs;}
+     if(done||live){const gs=parseGoals(comp,idc,false);if(gs.length)goalsById[gm.id]=gs;const cs=parseCards(comp,idc);if(cs.length)cardsById[gm.id]=cs;}
    }
    else{
      if(done){const w=H.winner?ch:(A.winner?ca:null);if(w)koPair[pairKey(ch,ca)]=w;}
      if(done||live){const dl=(st&&(st.detail||st.shortDetail||st.description))||"";const penH=parseInt(H.shootoutScore),penA=parseInt(A.shootoutScore);
-       const gs=parseGoals(comp,idc,true);const aet=/extra|aet|a\.e\.t|延長/i.test(dl)||gs.some(g=>baseMin(g.min)>90)||Number.isInteger(penH);
-       koData[pairKey(ch,ca)]={ch,ca,sh,sa,live,done,gs,penH,penA,aet,clk:liveClockStr(comp)};}
+       const gs=parseGoals(comp,idc,true);const cs=parseCards(comp,idc);const aet=/extra|aet|a\.e\.t|延長/i.test(dl)||gs.some(g=>baseMin(g.min)>90)||Number.isInteger(penH);
+       koData[pairKey(ch,ca)]={ch,ca,sh,sa,live,done,gs,cs,penH,penA,aet,clk:liveClockStr(comp)};}
    }
   });
   let changed=true,guard=0,adv=0;
@@ -2752,6 +2760,7 @@ async function fetchLive(manual){
    const flip=data.ch!==pa.code;const hs=flip?data.sa:data.sh,as=flip?data.sh:data.sa,pH=flip?data.penA:data.penH,pA=flip?data.penH:data.penA;
    if(Number.isInteger(hs)&&Number.isInteger(as))scores[mm.id]={h:hs,a:as};
    if(data.gs&&data.gs.length)goalsById[mm.id]=data.gs;
+   if(data.cs&&data.cs.length)cardsById[mm.id]=data.cs;
    if(data.live){newLive.add(mm.id);newClock[mm.id]=data.clk;}
    koPhase[mm.id]={aet:data.aet,penH:pH,penA:pA};
   }
@@ -2786,7 +2795,7 @@ async function enrichList(names){const todo=[...new Set(names)].filter(n=>n&&nam
  try{localStorage.setItem("wc2026:names2",JSON.stringify(nameZh));}catch(e){}
  return true;
 }
-async function enrichNames(){const names=[];Object.values(goalsById).forEach(arr=>arr.forEach(g=>{if(g.who)names.push(g.who);}));return enrichList(names);}
+async function enrichNames(){const names=[];Object.values(goalsById).forEach(arr=>arr.forEach(g=>{if(g.who)names.push(g.who);}));Object.values(cardsById).forEach(arr=>arr.forEach(c=>{if(c.who)names.push(c.who);}));return enrichList(names);}
 
 /* ===== EVENTS ===== */
 document.getElementById("tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;tab=b.dataset.tab;
@@ -2913,6 +2922,7 @@ function applyTheme(name){
 
 /* ===== CHANGELOG ===== */
 var CHANGELOG=[
+ {d:"6/13",t:"每場比賽現在會列出紅黃牌:第幾分鐘、哪一隊、誰吃牌(🟨 黃、🟥 紅、🟨🟥 兩黃變紅),資料跟進球一起從 ESPN 抓。"},
  {d:"6/13",t:"陣容圖的圓點升級成球員大頭照(抓 ESPN 的頭像)📸,沒有照片的球員會自動退回號碼圓圈。某位龜毛同事點名要的 😏。"},
  {d:"6/13",t:"新增 🔮 AI 預測比分(內建模型,純好玩):在還沒踢的比賽點「🔮 預測」,它會給一個比分並當場鎖定——因為用比賽 ID 當種子、公式固定,事後想偷改也改不了 😏。賽後自動對獎標命中,還會幫你累積戰績。"},
  {d:"6/13",t:"看到喜歡的球員或球隊,直接點名字就能一鍵跳到中文維基或 Google,不用再自己離開 App 慢慢查 🔎(名單裡的球員、卡片和積分榜的隊名都可以點)。"},
