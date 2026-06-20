@@ -2547,22 +2547,32 @@ function matchTitle(m){const h=tname(m.h)||m.h,a=tname(m.a)||m.a;const tag=m.sta
 /* ===== STANDINGS ===== */
 function groupMatches(g){return M.filter(m=>m.stage==="grp"&&m.group===g);}
 function groupDecided(g){return groupMatches(g).every(m=>scores[m.id]);}
+function h2hTable(g,ids){const h={};ids.forEach(c=>h[c]={Pts:0,GF:0,GA:0,GD:0});
+ groupMatches(g).forEach(m=>{const s=scores[m.id];if(!s)return;if(ids.indexOf(m.h)>=0&&ids.indexOf(m.a)>=0){const A=h[m.h],B=h[m.a];A.GF+=s.h;A.GA+=s.a;B.GF+=s.a;B.GA+=s.h;A.GD+=s.h-s.a;B.GD+=s.a-s.h;if(s.h>s.a)A.Pts+=3;else if(s.h<s.a)B.Pts+=3;else{A.Pts++;B.Pts++;}}});
+ return h;}
+function rankTied(g,teams){if(teams.length<=1)return teams.slice();
+ const ids=teams.map(t=>t.code);const h=h2hTable(g,ids);
+ const sorted=teams.slice().sort((x,y)=>h[y.code].Pts-h[x.code].Pts||h[y.code].GD-h[x.code].GD||h[y.code].GF-h[x.code].GF);
+ const eq=(a,b)=>h[a.code].Pts===h[b.code].Pts&&h[a.code].GD===h[b.code].GD&&h[a.code].GF===h[b.code].GF;
+ const runs=[];let cur=[sorted[0]];for(let k=1;k<sorted.length;k++){if(eq(sorted[k-1],sorted[k]))cur.push(sorted[k]);else{runs.push(cur);cur=[sorted[k]];}}runs.push(cur);
+ const overallCmp=(x,y)=>y.GD-x.GD||y.GF-x.GF||(RATING[y.code]||70)-(RATING[x.code]||70)||x.GA-y.GA;
+ if(runs.length===1)return teams.slice().sort(overallCmp);
+ let out=[];runs.forEach(run=>{if(run.length===1)out.push(run[0]);else out=out.concat(rankTied(g,run));});
+ return out;}
 function computeGroup(g){
  const row={}; GROUPS[g].forEach(c=>row[c]={code:c,P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0});
  groupMatches(g).forEach(m=>{const s=scores[m.id];if(!s)return;const A=row[m.h],B=row[m.a];A.P++;B.P++;A.GF+=s.h;A.GA+=s.a;B.GF+=s.a;B.GA+=s.h;
   if(s.h>s.a){A.W++;B.L++;A.Pts+=3;}else if(s.h<s.a){B.W++;A.L++;B.Pts+=3;}else{A.D++;B.D++;A.Pts++;B.Pts++;}});
  Object.values(row).forEach(r=>r.GD=r.GF-r.GA);
  let arr=Object.values(row);
- const base=(x,y)=>y.Pts-x.Pts||y.GD-x.GD||y.GF-x.GF;
- arr.sort(base);
- // head-to-head among clusters tied on Pts,GD,GF
- for(let i=0;i<arr.length;){let j=i;while(j+1<arr.length&&arr[j+1].Pts===arr[i].Pts&&arr[j+1].GD===arr[i].GD&&arr[j+1].GF===arr[i].GF)j++;
-  if(j>i){const ids=arr.slice(i,j+1).map(r=>r.code);const h={};ids.forEach(c=>h[c]={Pts:0,GD:0,GF:0});
-   groupMatches(g).forEach(m=>{const s=scores[m.id];if(!s)return;if(ids.includes(m.h)&&ids.includes(m.a)){const A=h[m.h],B=h[m.a];A.GF+=s.h;A.GA=(A.GA||0)+s.a;B.GF+=s.a;A.GD+=s.h-s.a;B.GD+=s.a-s.h;if(s.h>s.a)A.Pts+=3;else if(s.h<s.a)B.Pts+=3;else{A.Pts++;B.Pts++;}}});
-   const cluster=arr.slice(i,j+1).sort((x,y)=>h[y.code].Pts-h[x.code].Pts||h[y.code].GD-h[x.code].GD||h[y.code].GF-h[x.code].GF||x.GA-y.GA);
-   for(let k=0;k<cluster.length;k++)arr[i+k]=cluster[k];}
+ // 2026 rule: points first, then HEAD-TO-HEAD among tied teams, then overall GD/goals.
+ arr.sort((x,y)=>y.Pts-x.Pts);
+ const out=[];
+ for(let i=0;i<arr.length;){let j=i;while(j+1<arr.length&&arr[j+1].Pts===arr[i].Pts)j++;
+  const cluster=arr.slice(i,j+1);
+  out.push.apply(out,cluster.length>1?rankTied(g,cluster):cluster);
   i=j+1;}
- return arr;
+ return out;
 }
 function allThirds(){
  const list=Object.keys(GROUPS).map(g=>({g,r:computeGroup(g)[2]})).filter(o=>o.r.P>0);
