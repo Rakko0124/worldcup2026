@@ -130,6 +130,12 @@
   table.stand td.tm .fi,.kslot .fi{margin-right:5px}
   /* lineup panel */
   .lu-panel{background:var(--bg2);border:1px solid var(--line);border-radius:12px;margin:-2px 0 10px;padding:12px 14px}
+  .feed-panel{background:var(--bg2);border:1px solid var(--line);border-radius:12px;margin:-2px 0 10px;padding:12px 14px}
+  .feed-list{display:flex;flex-direction:column;max-height:440px;overflow:auto}
+  .fe{display:flex;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line);font-size:13px;line-height:1.5}
+  .fe:last-child{border-bottom:none}
+  .fe-t{flex:0 0 48px;font-family:"Oswald";color:var(--lime);font-weight:600}
+  .fe-x{flex:1;color:var(--txt)}
   .lu-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
   .lu-h{font-weight:700;font-size:14px;margin-bottom:6px;display:flex;align-items:center;gap:4px}
   .lu-sec{font-size:11px;color:var(--faint);letter-spacing:1px;margin:8px 0 4px;font-family:"Oswald";text-transform:uppercase}
@@ -2374,7 +2380,7 @@ const M=[
  ["C1","grp","C","2026-06-13T22:00:00Z","BRA","MAR","MetLife Stadium・紐約/紐澤西"],
  ["C2","grp","C","2026-06-14T01:00:00Z","HAI","SCO","Gillette Stadium・波士頓"],
  ["C3","grp","C","2026-06-19T22:00:00Z","SCO","MAR","Gillette Stadium・波士頓"],
- ["C4","grp","C","2026-06-20T01:00:00Z","BRA","HAI","Lincoln Financial Field・費城"],
+ ["C4","grp","C","2026-06-20T00:30:00Z","BRA","HAI","Lincoln Financial Field・費城"],
  ["C5","grp","C","2026-06-24T22:00:00Z","SCO","BRA","Hard Rock Stadium・邁阿密"],
  ["C6","grp","C","2026-06-24T22:00:00Z","MAR","HAI","Mercedes-Benz Stadium・亞特蘭大"],
  ["D1","grp","D","2026-06-13T01:00:00Z","USA","PAR","SoFi Stadium・洛杉磯"],
@@ -2661,7 +2667,7 @@ function cardHTML(m){const p=twParts(m.kick),st=statusOf(m),sc=scores[m.id],w=wa
  const cardsBlock=(cl&&cl.length)?`<div class="cards">${cl.map(c=>`<span class="cardEv"><span class="gm">${c.min||""}</span>${c.code&&T[c.code]?flagImg(c.code):""}<span class="ci">${c.kind==="R"?"🟥":c.kind==="YR"?"🟨🟥":"🟨"}</span><span class="gn">${c.num?`<span class="cnum">${c.num}</span>`:""}${c.who||""}${nameZh[c.who]?`<span class="gz">${nameZh[c.who]}</span>`:""}</span></span>`).join("")}</div>`:"";
  return `<div class="card ${w?'watched':''} ${st==='live'?'live':''}" data-id="${m.id}"><div class="when"><div class="t">${p.hour}:${p.minute}</div><div class="dm">${p.month}/${p.day} ${p.weekday}</div></div>
   <div class="center"><div class="matchup">${mid}</div><div class="meta">${st==="upcoming"?`<span class="pill st-up">未開始</span>`:st==="live"?`<span class="pill st-live">● ${liveClock[m.id]||"進行中"}</span>`:`<span class="pill st-done">已結束</span>`}<span class="pill">${stageTag}</span>${m.venue?`<span>📍 ${m.venue}</span>`:""}</div>${goalsBlock}${cardsBlock}${predBlock}</div>
-  <div class="actions"><button class="star ${w?'on':''}" data-star="${m.id}">★</button>${(T[m.h]&&T[m.a])?`<button class="cal" data-lu="${m.id}">📋 名單</button>`:""}${predBtn}<a class="cal elta" href="https://eltaott.tv/fifa2026" target="_blank" rel="noopener">📺 愛爾達</a><button class="cal" data-cal="${m.id}">📅 加入日曆</button></div></div>`;}
+  <div class="actions"><button class="star ${w?'on':''}" data-star="${m.id}">★</button>${(T[m.h]&&T[m.a])?`<button class="cal" data-lu="${m.id}">📋 名單</button>`:""}${(st==='live'||st==='done'||st==='await')?`<button class="cal" data-feed="${m.id}">📜 賽況</button>`:""}${predBtn}<a class="cal elta" href="https://eltaott.tv/fifa2026" target="_blank" rel="noopener">📺 愛爾達</a><button class="cal" data-cal="${m.id}">📅 加入日曆</button></div></div>`;}
 function render(){
  const arr=visible();
  if(!arr.length){listEl.innerHTML=`<div class="empty">${viewMode==='watch'?'還沒有關注任何比賽。<br>點比賽右上角的 ★ 加入關注。':viewMode==='done'?'目前還沒有已結束的比賽。<br>踢完的比賽會自動移到這裡。':'沒有符合的比賽（可能都已結束，可到「已結束」分頁查看）。'}</div>`;return;}
@@ -2811,6 +2817,7 @@ document.getElementById("icsBtn").addEventListener("click",exportICS);
 
 listEl.addEventListener("click",e=>{const star=e.target.closest("[data-star]");if(star){const id=star.dataset.star;watch.has(id)?watch.delete(id):watch.add(id);saveWatch();render();return;}
  const lu=e.target.closest("[data-lu]");if(lu){toggleLineup(lu.dataset.lu,lu);return;}
+ const fd=e.target.closest("[data-feed]");if(fd){toggleFeed(fd.dataset.feed,fd);return;}
  const cal=e.target.closest("[data-cal]");if(cal){window.open(gcalUrl(M.find(x=>x.id===cal.dataset.cal)),"_blank");return;}
  const pd=e.target.closest("[data-pred]");if(pd){doPredict(pd.dataset.pred);return;}
  const ed=e.target.closest("[data-edit]");if(ed){openScoreEdit(ed,ed.dataset.edit);return;}});
@@ -2818,6 +2825,7 @@ listEl.addEventListener("click",e=>{const star=e.target.closest("[data-star]");i
 /* ===== LINEUPS (ESPN summary, ~1h before kickoff) ===== */
 function toggleLineup(id,btn){const card=btn.closest(".card");if(!card)return;const nx=card.nextElementSibling;
  if(nx&&nx.classList.contains("lu-panel")){nx.remove();return;}
+ if(nx&&nx.classList.contains("feed-panel"))nx.remove();
  const box=document.createElement("div");box.className="lu-panel";card.after(box);loadLineup(M.find(x=>x.id===id),box);}
 const POS_ZH={G:"門將",GK:"門將",D:"後衛",CB:"中後衛",LCB:"中後衛",RCB:"中後衛",LB:"左後衛",RB:"右後衛",LWB:"左翼衛",RWB:"右翼衛",SW:"清道夫",M:"中場",CM:"中場",LCM:"中場",RCM:"中場",DM:"防守中場",CDM:"防守中場",AM:"攻擊中場",CAM:"攻擊中場",LM:"左中場",RM:"右中場",WM:"邊中場",F:"前鋒",ST:"中鋒",CF:"中鋒",SS:"第二前鋒",LW:"左邊鋒",RW:"右邊鋒",W:"邊鋒"};
 function posZh(p){const pos=p.position||{};const ab=(pos.abbreviation||"").toUpperCase();const nm=(pos.name||"").toLowerCase();
@@ -2863,6 +2871,62 @@ async function loadLineup(m,box){box.innerHTML='<div class="lu-load">讀取上�
   const names=[];rosters.forEach(rs=>(rs.roster||[]).forEach(p=>{const n=(p.athlete&&p.athlete.displayName)||"";if(n)names.push(n);}));
   enrichList(names).then(ch=>{if(ch&&box.isConnected)box.innerHTML=lineupHTML(rosters,m);});
  }catch(e){box.innerHTML='<div class="lu-msg">讀取失敗，稍後再試（賽事可能尚未開始，或來源暫時不可用）。</div>';}
+}
+function toggleFeed(id,btn){const card=btn.closest(".card");if(!card)return;const nx=card.nextElementSibling;
+ if(nx&&nx.classList.contains("feed-panel")){nx.remove();return;}
+ if(nx&&nx.classList.contains("lu-panel"))nx.remove();
+ const box=document.createElement("div");box.className="feed-panel";card.after(box);loadFeed(M.find(x=>x.id===id),box);}
+function transClip(s){s=(s||"").trim();if(!s)return "";
+ const P=[
+  [/^Match ends\b.*/i,()=>"比賽結束。"],
+  [/^(Second Half ends|End of 2nd half)\b.*/i,()=>"下半場結束。"],
+  [/^(First Half ends|End of 1st half|Half[- ]?Time)\b.*/i,()=>"上半場結束。"],
+  [/^(Second Half begins|Start of 2nd half)\b.*/i,()=>"下半場開始。"],
+  [/^(First Half begins|Kick[- ]?Off|Start of 1st half)\b.*/i,()=>"開球，比賽開始。"],
+  [/announced.*(lineup|line-?up)|^(Lineups?|Line-?ups?)\b.*announced.*/i,()=>"先發名單公布。"],
+  [/^Own Goal by\s+(.+?)\s*\(([^)]+)\).*/i,(m)=>"⚽ 烏龍球 — "+m[1]+"（"+m[2]+"）"],
+  [/^Goal!?\s*(.*)$/i,(m)=>"⚽ 進球！"+(m[1]?(" "+m[1]):"")],
+  [/^Penalty saved!?.*/i,()=>"🧤 點球被撲出！"],
+  [/^Penalty missed!?.*/i,()=>"❌ 點球射失！"],
+  [/^Penalty conceded by\s+(.+?)\s*\(([^)]+)\).*/i,(m)=>"判罰點球（"+m[1]+" 送點）"],
+  [/^Penalty,?\s*(.+?)[.,].*/i,(m)=>"判罰點球 — "+m[1]],
+  [/^Second yellow card to\s+(.+?)\s*\(([^)]+)\).*/i,(m)=>"🟨🟥 第二張黃牌，罰下 — "+m[1]],
+  [/^(.+?)\s*\(([^)]+)\)\s+is shown the (yellow|red) card.*/i,(m)=>(/red/i.test(m[3])?"🟥 紅牌 — ":"🟨 黃牌 — ")+m[1]],
+  [/^(.+?)\s*\(([^)]+)\)\s+receives? a (yellow|red) card.*/i,(m)=>(/red/i.test(m[3])?"🟥 紅牌 — ":"🟨 黃牌 — ")+m[1]],
+  [/^Substitution,?\s*(.+?)\.\s*(.+?)\s+replaces\s+(.+?)[.,].*/i,(m)=>"🔁 換人（"+m[1]+"）— "+m[2]+" 換下 "+m[3]],
+  [/^Attempt blocked\.?\s*(.+?)\s*\(([^)]+)\).*/i,(m)=>"射門被擋 — "+m[1]],
+  [/^Attempt missed\.?\s*(.+?)\s*\(([^)]+)\).*/i,(m)=>"射門偏出 — "+m[1]],
+  [/^Attempt saved\.?\s*(.+?)\s*\(([^)]+)\).*/i,(m)=>"射門被撲出 — "+m[1]],
+  [/^Shot taken by\s+(.+?)\s+against\s+.+?\.\s*Blocked.*/i,(m)=>"射門被擋 — "+m[1]],
+  [/^(.+?)\s*\(([^)]+)\)\s+hits the (bar|post|woodwork).*/i,(m)=>"擊中"+(/bar/i.test(m[3])?"橫樑":"門柱")+" — "+m[1]],
+  [/^Corner,?\s*(.+?)\.\s*Conceded by.*/i,(m)=>"🚩 角球（"+m[1]+"）"],
+  [/^Corner,?\s*([^.]+?)[.,].*/i,(m)=>"🚩 角球（"+m[1].trim()+"）"],
+  [/^(.+?)\s+takes? a corner.*/i,(m)=>"🚩 "+m[1]+" 開角球"],
+  [/^Foul by\s+(.+?)\s*\(([^)]+)\).*/i,(m)=>"犯規 — "+m[1]+"（"+m[2]+"）"],
+  [/^(.+?)\s*\(([^)]+)\)\s+wins a free kick.*/i,(m)=>"獲得任意球 — "+m[1]],
+  [/^Hand ball by\s+(.+?)\s*\(([^)]+)\).*/i,(m)=>"手球 — "+m[1]],
+  [/^Offside,?\s*(.+?)\.\s*([^.]+?)[.,].*/i,(m)=>"越位（"+m[1]+"）— "+m[2].trim()],
+  [/^Offside\b.*/i,()=>"越位"],
+  [/^Delay in match\s+(.+?)\s*\(([^)]+)\).*injur.*/i,(m)=>"⏸️ 比賽中斷："+m[1]+" 受傷"],
+  [/^Delay in match\b.*/i,()=>"⏸️ 比賽中斷"],
+  [/^Delay over\b.*/i,()=>"▶️ 比賽繼續"],
+  [/^Substitution\b.*/i,()=>"🔁 換人"]
+ ];
+ for(var i=0;i<P.length;i++){var mm=s.match(P[i][0]);if(mm)return P[i][1](mm);}
+ return s;}
+function feedHTML(com,m){if(!com||!com.length)return '<div class="lu-msg">這場目前沒有文字賽況（可能還沒開賽，或 ESPN 未提供）。</div>';
+ var items=com.slice().sort(function(a,b){return (b.sequence||0)-(a.sequence||0);});
+ if(items.every(function(c){return !c.sequence;}))items=com.slice().reverse();
+ var rows=items.map(function(c){var t=(c.time&&(c.time.displayValue||c.time.clock))||"";var en=(c.text||"").trim();var zh=transClip(en);return '<div class="fe"><span class="fe-t">'+escHtml(t)+'</span><span class="fe-x">'+escHtml(zh)+'</span></div>';}).join("");
+ return '<div class="lu-hint">📜 常見事件已轉中文，少見的會留原文</div><div class="feed-list">'+rows+'</div>';}
+async function loadFeed(m,box){box.innerHTML='<div class="lu-load">讀取即時賽況中…</div>';
+ let id=eventIdFor(m);
+ if(!id){await fetchLive(false);id=eventIdFor(m);}
+ if(!id){box.innerHTML='<div class="lu-msg">目前抓不到這場的對應資料（需在線上網址開啟，賽事接近時才會有）。</div>';return;}
+ try{const r=await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary?event=${id}`,{cache:"no-store"});
+  if(!r.ok)throw new Error("HTTP "+r.status);const j=await r.json();
+  box.innerHTML=feedHTML(j.commentary||[],m);
+ }catch(e){box.innerHTML='<div class="lu-msg">讀取失敗，稍後再試。</div>';}
 }
 function openScoreEdit(el,id){const cur=scores[id]||{h:"",a:""};const box=document.createElement("span");box.className="scoreEdit";
  box.innerHTML=`<input type="number" min="0" value="${cur.h}" id="sh"> : <input type="number" min="0" value="${cur.a}" id="sa"><button class="ok">✓</button>`;
@@ -2923,6 +2987,7 @@ function applyTheme(name){
 
 /* ===== CHANGELOG ===== */
 var CHANGELOG=[
+ {d:"6/13",t:"新增 📜 即時賽況:點開賽中或已結束的比賽,可看逐分鐘的文字直播(射門、角球、犯規、換人、紅黃牌…)。常見事件已轉成中文,少見的句子會保留英文原文(因為線上版不能跑即時翻譯,先用對照表頂著,之後慢慢補)。"},
  {d:"6/13",t:"每場比賽現在會列出紅黃牌:第幾分鐘、哪一隊、誰吃牌(🟨 黃、🟥 紅、🟨🟥 兩黃變紅),資料跟進球一起從 ESPN 抓。"},
  {d:"6/13",t:"陣容圖的圓點升級成球員大頭照(抓 ESPN 的頭像)📸,沒有照片的球員會自動退回號碼圓圈。某位龜毛同事點名要的 😏。"},
  {d:"6/13",t:"新增 🔮 AI 預測比分(內建模型,純好玩):在還沒踢的比賽點「🔮 預測」,它會給一個比分並當場鎖定——因為用比賽 ID 當種子、公式固定,事後想偷改也改不了 😏。賽後自動對獎標命中,還會幫你累積戰績。"},
