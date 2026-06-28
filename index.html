@@ -2544,7 +2544,7 @@ function pad(n){return String(n).padStart(2,"0");}
 function icsStamp(iso){const d=new Date(iso);return d.getUTCFullYear()+pad(d.getUTCMonth()+1)+pad(d.getUTCDate())+"T"+pad(d.getUTCHours())+pad(d.getUTCMinutes())+"00Z";}
 function endIso(iso){return new Date(new Date(iso).getTime()+2*3600*1000).toISOString();}
 function statusOf(m){const k=new Date(m.kick).getTime(),now=Date.now();if(liveSet.has(m.id))return"live";if(scores[m.id])return"done";if(now>=k&&now<k+8100000)return"live";if(now>=k+8100000)return"await";return"upcoming";}
-function matchTitle(m){const h=tname(m.h)||m.h,a=tname(m.a)||m.a;const tag=m.stage==="grp"?m.group+"組":m.group;return `⚽ ${h} vs ${a}（世界盃 ${tag}）`;}
+function matchTitle(m){let h,a;if(m.stage!=="grp"&&m.no){const[pa,pb]=partsOf(m.no);h=pa.code?tname(pa.code):(pa.label||m.h);a=pb.code?tname(pb.code):(pb.label||m.a);}else{h=tname(m.h)||m.h;a=tname(m.a)||m.a;}const tag=m.stage==="grp"?m.group+"組":m.group;return `⚽ ${h} vs ${a}（世界盃 ${tag}）`;}
 
 /* ===== STANDINGS ===== */
 function groupMatches(g){return M.filter(m=>m.stage==="grp"&&m.group===g);}
@@ -2999,6 +2999,7 @@ function applyTheme(name){
 
 /* ===== CHANGELOG ===== */
 var CHANGELOG=[
+ {d:"6/28",t:"修好淘汰賽「加入日曆／匯出 .ics」標題還是顯示「C組首名 vs 第三名」的問題,現在會帶實際國家名(🇩🇪 德國 vs 🇵🇾 巴拉圭)。注意:之前已經加進日曆的舊事件不會自動變,要重新加一次才會更新標題。"},
  {d:"6/28",t:"修好 32 強沒填滿的問題:8 個「最佳第三名」的位置之前停在佔位符(像「A/B/C/D/F第三名」),因為要靠 FIFA 的 Annex C 對照表才知道哪組第三名去哪場。現在已照本屆實際晉級結果接上(德國-巴拉圭、英格蘭-剛果民主…),小組踢完就會自動補滿。"},
  {d:"6/13",t:"新增 📜 即時賽況:點開賽中或已結束的比賽,可看逐分鐘的文字直播(射門、角球、犯規、換人、紅黃牌…)。常見事件已轉成中文,少見的句子會保留英文原文(因為線上版不能跑即時翻譯,先用對照表頂著,之後慢慢補)。"},
  {d:"6/13",t:"每場比賽現在會列出紅黃牌:第幾分鐘、哪一隊、誰吃牌(🟨 黃、🟥 紅、🟨🟥 兩黃變紅),資料跟進球一起從 ESPN 抓。"},
