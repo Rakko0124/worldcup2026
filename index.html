@@ -220,6 +220,12 @@
   .kslot.win{background:rgba(207,253,74,.12);border-left-color:var(--lime);color:var(--lime)}
   .kslot.win::after{content:"✓";margin-left:auto;color:var(--lime);font-weight:900}
   .kslot.lose{opacity:.45}
+  .kslot.locked{cursor:default}
+  .ksc{margin-left:auto;font-family:"Oswald";font-weight:700;font-size:14px;color:var(--txt)}
+  .kslot.win .ksc{color:var(--lime)}
+  .kslot.lose .ksc{color:var(--muted)}
+  .kpk{font-size:11px;color:var(--muted);margin-left:3px;font-weight:600}
+  .kdone{color:var(--lime);font-weight:700}
   .final-wrap{margin-top:6px}
   .champ{margin-top:10px;text-align:center;background:linear-gradient(180deg,rgba(247,201,72,.14),var(--surface));border:1px solid var(--gold);border-radius:12px;padding:12px}
   .champ .lbl{font-size:11px;color:var(--gold);letter-spacing:2px} .champ .who{font-family:"Anton";font-size:22px;margin-top:4px}
@@ -2614,13 +2620,18 @@ function partsOf(no){const s=KOSRC[no];return [resolveSrc(s.a),resolveSrc(s.b)];
 function winSlot(no){if(koWin[no]!=null)return partsOf(no)[koWin[no]];return {label:`賽事${no}勝方`};}
 function loseSlot(no){if(koWin[no]!=null)return partsOf(no)[1-koWin[no]];return {label:`賽事${no}敗方`};}
 
-function slotHTML(no,i){const p=partsOf(no)[i];const won=koWin[no]===i;const lost=koWin[no]!=null&&koWin[no]!==i;
- const inner=p.code?`${flagImg(p.code)}${T[p.code].zh}`:`${p.label}`;
- const cls="kslot"+(p.code?"":" lbl")+(won?" win":"")+(lost?" lose":"");
+function koLocked(no){const m=MByNo[no];return !!(m&&scores[m.id]);}
+function slotHTML(no,i){const p=partsOf(no)[i];const won=koWin[no]===i;const lost=koWin[no]!=null&&koWin[no]!==i;const lk=koLocked(no);
+ const m=MByNo[no];const sc=m?scores[m.id]:null;const ph=m?koPhase[m.id]:null;let scoreHTML="";
+ if(sc){const g=i===0?sc.h:sc.a;const hasPK=ph&&Number.isInteger(ph.penH)&&Number.isInteger(ph.penA)&&(ph.penH||ph.penA);const pk=hasPK?(i===0?ph.penH:ph.penA):null;scoreHTML=`<span class="ksc">${g}${pk!=null?`<span class="kpk">(${pk})</span>`:""}</span>`;}
+ const inner=(p.code?`${flagImg(p.code)}${T[p.code].zh}`:`${p.label}`)+scoreHTML;
+ const cls="kslot"+(p.code?"":" lbl")+(won?" win":"")+(lost?" lose":"")+(lk?" locked":"");
  return `<div class="${cls}" data-ko="${no}" data-slot="${i}">${inner}</div>`;}
 function koWhenTxt(no){const m=MByNo[no];if(!m)return"";const p=twParts(m.kick);return `${p.month}/${p.day} ${p.hour}:${p.minute}`;}
 function nodeHTML(no){const m=MByNo[no];const venue=(m&&m.venue&&m.stage!=="r16")?m.venue.split("・").pop():"";
- return `<div class="knode"><div class="kt"><span>賽事 ${no}・${koWhenTxt(no)}</span><span>${venue}</span></div>${slotHTML(no,0)}${slotHTML(no,1)}</div>`;}
+ let rt=venue;
+ if(koLocked(no)){const ph=m&&koPhase[m.id];const tag=(ph&&Number.isInteger(ph.penH)&&Number.isInteger(ph.penA)&&(ph.penH||ph.penA))?"PK":((ph&&ph.aet)?"延長":"正規");rt=`<span class="kdone">✓ ${tag}</span>`;}
+ return `<div class="knode"><div class="kt"><span>賽事 ${no}・${koWhenTxt(no)}</span><span>${rt}</span></div>${slotHTML(no,0)}${slotHTML(no,1)}</div>`;}
 
 function renderBracket(){
  let html="";
@@ -2773,7 +2784,7 @@ async function fetchLive(manual){
    }
   });
   let changed=true,guard=0,adv=0;
-  while(changed&&guard++<12){changed=false;for(const no of KO_ORDER){if(koWin[no]!=null)continue;const[pa,pb]=partsOf(no);if(pa.code&&pb.code){const w=koPair[pairKey(pa.code,pb.code)];if(w){koWin[no]=(w===pa.code)?0:1;changed=true;adv++;}}}}
+  while(changed&&guard++<12){changed=false;for(const no of KO_ORDER){const[pa,pb]=partsOf(no);if(!pa.code||!pb.code)continue;const w=koPair[pairKey(pa.code,pb.code)];if(w){const nv=(w===pa.code)?0:1;if(koWin[no]!==nv){koWin[no]=nv;changed=true;adv++;}}}}
   for(const no of KO_ORDER){const mm=MByNo[no];if(!mm)continue;const[pa,pb]=partsOf(no);if(!pa.code||!pb.code)continue;
    const data=koData[pairKey(pa.code,pb.code)];if(!data)continue;
    const flip=data.ch!==pa.code;const hs=flip?data.sa:data.sh,as=flip?data.sh:data.sa,pH=flip?data.penA:data.penH,pA=flip?data.penH:data.penA;
@@ -2949,6 +2960,7 @@ function openScoreEdit(el,id){const cur=scores[id]||{h:"",a:""};const box=docume
 document.getElementById("bracket").addEventListener("click",koClick);
 document.getElementById("thirdBox").addEventListener("click",koClick);
 function koClick(e){const s=e.target.closest("[data-ko]");if(!s)return;const no=+s.dataset.ko,i=+s.dataset.slot;
+ if(koLocked(no)){setStatus&&setStatus("這場結果已確定,無法手動更改。");return;}
  const p=partsOf(no)[i];if(!p.code&&!p.label)return; // nothing to pick
  if(koWin[no]===i)delete koWin[no];else koWin[no]=i;saveKo();renderBracket();}
 
@@ -2999,6 +3011,8 @@ function applyTheme(name){
 
 /* ===== CHANGELOG ===== */
 var CHANGELOG=[
+ {d:"6/28",t:"淘汰賽表現在每場會顯示比分:每隊的進球標在名字右邊,PK 用括號(例如「南非 1(4)」「加拿大 1(2)」)。節點右上角會標「✓ 正規／✓ 延長／✓ PK」,一眼分得出是九十分鐘、延長賽還是十二碼分勝負。比分來自 ESPN(線上版、賽後生效),只有踢完的場次會顯示。"},
+ {d:"6/28",t:"淘汰賽防呆:已經踢完、結果確定的對戰會鎖定,不能再手動打勾蓋掉(格子上標「✓ 結果確定」),避免改錯讓後面對戰跟著亂。還沒踢的場次仍可手動點選預測。另外真實結果現在是「最高權威」——就算你之前手動點錯,ESPN 一給結果就會自動更正。"},
  {d:"6/28",t:"修好淘汰賽「加入日曆／匯出 .ics」標題還是顯示「C組首名 vs 第三名」的問題,現在會帶實際國家名(🇩🇪 德國 vs 🇵🇾 巴拉圭)。注意:之前已經加進日曆的舊事件不會自動變,要重新加一次才會更新標題。"},
  {d:"6/28",t:"修好 32 強沒填滿的問題:8 個「最佳第三名」的位置之前停在佔位符(像「A/B/C/D/F第三名」),因為要靠 FIFA 的 Annex C 對照表才知道哪組第三名去哪場。現在已照本屆實際晉級結果接上(德國-巴拉圭、英格蘭-剛果民主…),小組踢完就會自動補滿。"},
  {d:"6/13",t:"新增 📜 即時賽況:點開賽中或已結束的比賽,可看逐分鐘的文字直播(射門、角球、犯規、換人、紅黃牌…)。常見事件已轉成中文,少見的句子會保留英文原文(因為線上版不能跑即時翻譯,先用對照表頂著,之後慢慢補)。"},
