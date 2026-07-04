@@ -176,6 +176,8 @@
   .pill.st-up{color:var(--faint)}
   .pill.st-live{color:var(--red);border-color:var(--red);font-weight:700}
   .pill.st-done{color:var(--blue);border-color:var(--line2)}
+  .pill.st-delay{color:#ffb267;border-color:#8a4a12;font-weight:700}
+  .pill.st-resch{color:#ffd76a;border-color:#7a5c12}
   a.cal.elta{text-decoration:none;color:var(--blue);border-color:var(--line2)} a.cal.elta:hover{border-color:var(--blue)}
   /* lottery */
   .lot-banner{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin:16px 0}
@@ -2461,14 +2463,14 @@ const M=[
  ["R32-15","r32","32 強","2026-07-03T22:00:00Z","J組首名","H組次名","Hard Rock Stadium・邁阿密",86],
  ["R32-16","r32","32 強","2026-07-04T01:30:00Z","K組首名","第三名(D/E/I/J/L)","Arrowhead Stadium・堪薩斯城",87],
  // ROUND OF 16
- ["R16-1","r16","16 強","2026-07-04T17:00:00Z","勝者","勝者","",89],
- ["R16-2","r16","16 強","2026-07-04T21:00:00Z","勝者","勝者","",90],
- ["R16-3","r16","16 強","2026-07-05T20:00:00Z","勝者","勝者","",91],
- ["R16-4","r16","16 強","2026-07-06T00:00:00Z","勝者","勝者","",92],
- ["R16-5","r16","16 強","2026-07-06T19:00:00Z","勝者","勝者","",93],
- ["R16-6","r16","16 強","2026-07-07T00:00:00Z","勝者","勝者","",94],
- ["R16-7","r16","16 強","2026-07-07T16:00:00Z","勝者","勝者","",95],
- ["R16-8","r16","16 強","2026-07-07T20:00:00Z","勝者","勝者","",96],
+ ["R16-1","r16","16 強","2026-07-04T21:00:00Z","勝者","勝者","Lincoln Financial Field・費城",89],
+ ["R16-2","r16","16 強","2026-07-04T17:00:00Z","勝者","勝者","NRG Stadium・休士頓",90],
+ ["R16-3","r16","16 強","2026-07-05T20:00:00Z","勝者","勝者","MetLife Stadium・紐約/紐澤西",91],
+ ["R16-4","r16","16 強","2026-07-06T00:00:00Z","勝者","勝者","Estadio Azteca・墨西哥城",92],
+ ["R16-5","r16","16 強","2026-07-06T19:00:00Z","勝者","勝者","AT&T Stadium・達拉斯",93],
+ ["R16-6","r16","16 強","2026-07-07T00:00:00Z","勝者","勝者","Lumen Field・西雅圖",94],
+ ["R16-7","r16","16 強","2026-07-07T16:00:00Z","勝者","勝者","Mercedes-Benz Stadium・亞特蘭大",95],
+ ["R16-8","r16","16 強","2026-07-07T20:00:00Z","勝者","勝者","BC Place・溫哥華",96],
  // QUARTERFINALS
  ["QF-1","qf","8 強","2026-07-09T20:00:00Z","勝者","勝者","Gillette Stadium・波士頓",97],
  ["QF-2","qf","8 強","2026-07-10T19:00:00Z","勝者","勝者","SoFi Stadium・洛杉磯",98],
@@ -2483,6 +2485,15 @@ const M=[
  ["FINAL","final","🏆 冠軍戰","2026-07-19T19:00:00Z","勝者","勝者","MetLife Stadium・紐約/紐澤西",104]
 ].map(a=>({id:a[0],stage:a[1],group:a[2],kick:a[3],h:a[4],a:a[5],venue:a[6],no:a[7]}));
 const MByNo={}; M.forEach(m=>{if(m.no!=null)MByNo[m.no]=m;});
+/* ===== DYNAMIC KICKOFF: keep original schedule, allow ESPN to override actual time ===== */
+const KICK0={};M.forEach(m=>{KICK0[m.id]=m.kick;});
+let kickOv={};try{kickOv=JSON.parse(localStorage.getItem("wc2026:kick")||"{}")||{};}catch(e){kickOv={};}
+(function(){M.forEach(m=>{const o=kickOv[m.id];if(!o)return;const ot=Date.parse(o),bt=Date.parse(KICK0[m.id]);if(!isNaN(ot)&&Math.abs(ot-bt)<1.728e8)m.kick=o;});})();
+function saveKick(){try{localStorage.setItem("wc2026:kick",JSON.stringify(kickOv));}catch(e){}}
+function setKick(m,iso){if(!m||!iso)return false;const ts=Date.parse(iso);if(isNaN(ts))return false;const bt=Date.parse(KICK0[m.id]);if(isNaN(bt)||Math.abs(ts-bt)>=1.728e8)return false;/* >2 天偏差 → 視為對應錯誤,忽略 */ if(Math.abs(ts-Date.parse(m.kick))<60000)return false;m.kick=iso;kickOv[m.id]=iso;return true;}
+function rescheduled(m){return Math.abs(Date.parse(m.kick)-Date.parse(KICK0[m.id]))>60000;}
+function schedInfo(m){if(!rescheduled(m))return"";const p=twParts(KICK0[m.id]);return `原訂 ${p.hour}:${p.minute}`;}
+function delayLabel(name,detail){const s=((name||"")+" "+(detail||"")).toLowerCase();if(/suspend/.test(s))return"⏸️ 中斷";if(/postpon/.test(s))return"⏰ 改期";if(/delay|rain|weather/.test(s))return"⏳ 延後";return"";}
 
 /* ===== team-name matching (for ESPN live data) ===== */
 const CODES=new Set(Object.keys(T));
@@ -2527,7 +2538,7 @@ const ROUNDS=[["32 強",[73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88]],["16 
 
 /* ===== STATE ===== */
 let watch=new Set(), scores={}, koWin={}, preds={}, viewMode="date", teamFilter="", tab="sched", memOnly=false;
-let liveSet=new Set(); const goalsById={}; const cardsById={}; const nameZh={}; const koPhase={}; let liveClock={};
+let liveSet=new Set(); const goalsById={}; const cardsById={}; const nameZh={}; const koPhase={}; let liveClock={}; let liveDelay={};
 function loadState(){
  try{const w=localStorage.getItem("wc2026:watch");if(w)watch=new Set(JSON.parse(w));}catch(e){}
  try{const s=localStorage.getItem("wc2026:scores");if(s)scores=JSON.parse(s);}catch(e){}
@@ -2689,7 +2700,7 @@ function cardHTML(m){const p=twParts(m.kick),st=statusOf(m),sc=scores[m.id],w=wa
  const goalsBlock=(gl&&gl.length)?`<div class="goals">${gl.map(g=>`<span class="goal"><span class="gm">${g.min||""}</span>${g.code&&T[g.code]?flagImg(g.code):""}<span class="gn">${g.num?`<span class="cnum">${g.num}</span>`:""}${g.who||"進球"}${nameZh[g.who]?`<span class="gz">${nameZh[g.who]}</span>`:""}${g.tag?`（${g.tag}）`:""}</span></span>`).join("")}</div>`:"";
  const cardsBlock=(cl&&cl.length)?`<div class="cards">${cl.map(c=>`<span class="cardEv"><span class="gm">${c.min||""}</span>${c.code&&T[c.code]?flagImg(c.code):""}<span class="ci">${c.kind==="R"?"🟥":c.kind==="YR"?"🟨🟥":"🟨"}</span><span class="gn">${c.num?`<span class="cnum">${c.num}</span>`:""}${c.who||""}${nameZh[c.who]?`<span class="gz">${nameZh[c.who]}</span>`:""}</span></span>`).join("")}</div>`:"";
  return `<div class="card ${w?'watched':''} ${st==='live'?'live':''}" data-id="${m.id}"><div class="when"><div class="t">${p.hour}:${p.minute}</div><div class="dm">${p.month}/${p.day} ${p.weekday}</div></div>
-  <div class="center"><div class="matchup">${mid}</div><div class="meta">${st==="upcoming"?`<span class="pill st-up">未開始</span>`:st==="live"?`<span class="pill st-live">● ${liveClock[m.id]||"進行中"}</span>`:`<span class="pill st-done">已結束</span>`}<span class="pill">${stageTag}</span>${m.venue?`<span>📍 ${m.venue}</span>`:""}</div>${goalsBlock}${cardsBlock}${predBlock}</div>
+  <div class="center"><div class="matchup">${mid}</div><div class="meta">${st==="upcoming"?`<span class="pill st-up">未開始</span>`:st==="live"?`<span class="pill st-live">● ${liveClock[m.id]||"進行中"}</span>`:`<span class="pill st-done">已結束</span>`}${liveDelay[m.id]?`<span class="pill st-delay">${liveDelay[m.id]}</span>`:""}${rescheduled(m)?`<span class="pill st-resch">🕒 改期・${schedInfo(m)}</span>`:""}<span class="pill">${stageTag}</span>${m.venue?`<span>📍 ${m.venue}</span>`:""}</div>${goalsBlock}${cardsBlock}${predBlock}</div>
   <div class="actions"><button class="star ${w?'on':''}" data-star="${m.id}">★</button>${(T[m.h]&&T[m.a])?`<button class="cal" data-lu="${m.id}">📋 名單</button>`:""}${(st==='live'||st==='done'||st==='await')?`<button class="cal" data-feed="${m.id}">📜 賽況</button>`:""}${predBtn}<a class="cal elta" href="https://eltaott.tv/fifa2026" target="_blank" rel="noopener">📺 愛爾達</a><button class="cal" data-cal="${m.id}">📅 加入日曆</button></div></div>`;}
 function render(){
  const arr=visible();
@@ -2761,7 +2772,7 @@ async function fetchLive(manual){
   const r=await fetch(url,{cache:"no-store"});
   if(!r.ok)throw new Error("HTTP "+r.status);
   const j=await r.json();const events=j.events||[];
-  let nG=0;const koPair={};const newLive=new Set();const koData={};const newClock={};
+  let nG=0;const koPair={};const newLive=new Set();const koData={};const newClock={};const newDelay={};let kchg=false;
   events.forEach(ev=>{const comp=ev.competitions&&ev.competitions[0];if(!comp)return;
    const cs=comp.competitors||[];if(cs.length<2)return;
    const H=cs.find(c=>c.homeAway==="home")||cs[0],A=cs.find(c=>c.homeAway==="away")||cs[1];
@@ -2772,6 +2783,8 @@ async function fetchLive(manual){
    const idc={};if(H.team)idc[H.team.id]=ch;if(A.team)idc[A.team.id]=ca;
    const gm=M.find(m=>m.stage==="grp"&&((m.h===ch&&m.a===ca)||(m.h===ca&&m.a===ch)));
    if(gm){
+     if(setKick(gm,ev.date))kchg=true;
+     if(!done){const dlab=delayLabel(st&&st.name,(st&&(st.detail||st.shortDetail||st.description)));if(dlab)newDelay[gm.id]=dlab;}
      if(live){newLive.add(gm.id);newClock[gm.id]=liveClockStr(comp);}
      if((done||live)&&Number.isInteger(sh)&&Number.isInteger(sa)){scores[gm.id]={h:gm.h===ch?sh:sa,a:gm.h===ch?sa:sh};nG++;}
      if(done||live){const gs=parseGoals(comp,idc,false);if(gs.length)goalsById[gm.id]=gs;const cs=parseCards(comp,idc);if(cs.length)cardsById[gm.id]=cs;}
@@ -2780,13 +2793,15 @@ async function fetchLive(manual){
      if(done){const w=H.winner?ch:(A.winner?ca:null);if(w)koPair[pairKey(ch,ca)]=w;}
      if(done||live){const dl=(st&&(st.detail||st.shortDetail||st.description))||"";const penH=parseInt(H.shootoutScore),penA=parseInt(A.shootoutScore);
        const gs=parseGoals(comp,idc,true);const cs=parseCards(comp,idc);const aet=/extra|aet|a\.e\.t|延長/i.test(dl)||gs.some(g=>baseMin(g.min)>90)||Number.isInteger(penH);
-       koData[pairKey(ch,ca)]={ch,ca,sh,sa,live,done,gs,cs,penH,penA,aet,clk:liveClockStr(comp)};}
+       koData[pairKey(ch,ca)]={ch,ca,sh,sa,live,done,gs,cs,penH,penA,aet,date:ev.date,dlab:delayLabel(st&&st.name,dl),clk:liveClockStr(comp)};}
    }
   });
   let changed=true,guard=0,adv=0;
   while(changed&&guard++<12){changed=false;for(const no of KO_ORDER){const[pa,pb]=partsOf(no);if(!pa.code||!pb.code)continue;const w=koPair[pairKey(pa.code,pb.code)];if(w){const nv=(w===pa.code)?0:1;if(koWin[no]!==nv){koWin[no]=nv;changed=true;adv++;}}}}
   for(const no of KO_ORDER){const mm=MByNo[no];if(!mm)continue;const[pa,pb]=partsOf(no);if(!pa.code||!pb.code)continue;
    const data=koData[pairKey(pa.code,pb.code)];if(!data)continue;
+   if(setKick(mm,data.date))kchg=true;
+   if(!data.done&&data.dlab)newDelay[mm.id]=data.dlab;
    const flip=data.ch!==pa.code;const hs=flip?data.sa:data.sh,as=flip?data.sh:data.sa,pH=flip?data.penA:data.penH,pA=flip?data.penH:data.penA;
    if(Number.isInteger(hs)&&Number.isInteger(as))scores[mm.id]={h:hs,a:as};
    if(data.gs&&data.gs.length)goalsById[mm.id]=data.gs;
@@ -2794,7 +2809,7 @@ async function fetchLive(manual){
    if(data.live){newLive.add(mm.id);newClock[mm.id]=data.clk;}
    koPhase[mm.id]={aet:data.aet,penH:pH,penA:pA};
   }
-  liveSet=newLive;liveClock=newClock;
+  liveSet=newLive;liveClock=newClock;liveDelay=newDelay;if(kchg)saveKick();
   saveScores();saveKo();renderAll();enrichNames().then(c=>{if(c)renderAll();});lastFetch=Date.now();
   if(nG||adv)setLive(`✅ 已更新：小組賽 ${nG} 場、淘汰賽晉級 ${adv} 場　·　${fmtT(lastFetch)}`);
   else setLive(`ℹ️ 目前尚無已完成的比賽（賽事開始後會自動帶入）　·　${fmtT(lastFetch)}`);
@@ -3011,6 +3026,8 @@ function applyTheme(name){
 
 /* ===== CHANGELOG ===== */
 var CHANGELOG=[
+ {d:"6/28",t:"修正 16 強兩場開球時間:賽事 89(巴拉圭 vs 法國)與 90(加拿大 vs 摩洛哥)的時間原本寫反了,已對照官方賽程改正——89 是台灣 7/5 05:00(費城)、90 是 7/5 01:00(休士頓)。並補上這輪各場的比賽場館。"},
+ {d:"6/28",t:"比賽時間改成動態:開球時間不再寫死,會以 ESPN 的實際時間為準自動更新(例如天氣延賽)。若跟原訂時間不同,卡片會標「🕒 改期・原訂 HH:MM」;比賽正被延後/中斷時會標「⏳ 延後／⏸️ 中斷」。抓不到資料(離線)時仍用內建排程,且會忽略異常值(和原訂差超過 2 天就不採用),避免抓錯亂跳。"},
  {d:"6/28",t:"淘汰賽表現在每場會顯示比分:每隊的進球標在名字右邊,PK 用括號(例如「南非 1(4)」「加拿大 1(2)」)。節點右上角會標「✓ 正規／✓ 延長／✓ PK」,一眼分得出是九十分鐘、延長賽還是十二碼分勝負。比分來自 ESPN(線上版、賽後生效),只有踢完的場次會顯示。"},
  {d:"6/28",t:"淘汰賽防呆:已經踢完、結果確定的對戰會鎖定,不能再手動打勾蓋掉(格子上標「✓ 結果確定」),避免改錯讓後面對戰跟著亂。還沒踢的場次仍可手動點選預測。另外真實結果現在是「最高權威」——就算你之前手動點錯,ESPN 一給結果就會自動更正。"},
  {d:"6/28",t:"修好淘汰賽「加入日曆／匯出 .ics」標題還是顯示「C組首名 vs 第三名」的問題,現在會帶實際國家名(🇩🇪 德國 vs 🇵🇾 巴拉圭)。注意:之前已經加進日曆的舊事件不會自動變,要重新加一次才會更新標題。"},
